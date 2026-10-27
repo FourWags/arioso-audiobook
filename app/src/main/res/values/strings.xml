@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chapter_progress">Chapter %1$d of %2$d · %3$s left</string>
+    <string name="output_route">Output: %1$s</string>
+    <string name="repeat_off">A–B repeat</string>
+    <string name="repeat_a">A set at %1$s</string>
+    <string name="repeat_ab">Repeat %1$s–%2$s</string>
+</resources>

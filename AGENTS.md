@@ -1,0 +1,3 @@
+# Dart
+
+Use this folder as Dart's authoritative project home. Apply /home/Rucket/Projects/Project Quality/QUALITY-STANDARD.txt and the user's global project, backup, API-key, and GitHub Latest instructions. Preserve source files, selected user media, credentials, and unique evidence. Do not copy code or assets from Petal Voice or bundle an audiobook without documented redistribution rights. Keep the current verified local personal preview and exactly one previous verified local preview. Current: preview.25 in Work/candidate-v25. Previous: preview.24 in Work/previous-preview24. See their CHECKS.txt files for exact evidence and limits. No Dart GitHub release has been published.
