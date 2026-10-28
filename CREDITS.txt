@@ -1,5 +1,5 @@
 Arioso application Java code and vector icon are original to this project and covered by LICENSE (MIT), copyright (c) 2026 Four Wags Software.
-No the retired audiobook app, the earlier reader app, or third-party audiobook source, artwork, fonts, or media is included.
+Neither the retired audiobook app nor the earlier reader app is included; no third-party audiobook source, artwork, fonts, or media is included.
 Android platform APIs and Gradle/Android build tools retain their own licenses. Arioso APKs contain the app's code, icon, and Android resource definitions; no external runtime library is declared.
 JUnit 4.13.2 is an Eclipse Public License 1.0 test dependency and is not bundled in the APK. See https://github.com/junit-team/junit4/blob/main/LICENSE-junit.txt for its license.
 The full Arioso MIT notice, a component/content-rights notice, and the privacy policy are bundled in the APK and available from Library actions > About & licenses. The packaged MIT notice must match the project LICENSE byte-for-byte; the packaged privacy policy is checked against PRIVACY.md.
