@@ -1,0 +1,7 @@
+Arioso components and content rights
+
+Arioso application code and vector icon: MIT License, copyright (c) 2026 Four Wags Software. The complete license is available in this app and in the corresponding source.
+
+The audited preview.27 candidate declares no external runtime libraries and bundles no audiobook, book cover, font, or other media content. Android system APIs and fonts are provided by the operating system. Build tools and JUnit are used to create or test the app; they are not included in the APK.
+
+Your chosen audio files and covers remain under their own rights. Arioso's license does not grant permission to copy, sell, or redistribute those files.

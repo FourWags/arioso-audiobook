@@ -1,13 +1,20 @@
 plugins { id("com.android.application") }
 android {
-    namespace = "app.dart.audiobook"
+    namespace = "app.arioso.audiobook"
     compileSdk = 36
     defaultConfig {
-        applicationId = "app.dart.audiobook"
+        applicationId = "app.arioso.audiobook"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 25
-        versionName = "0.1.0-preview.25"
+        targetSdk = 36
+        versionCode = 37
+        versionName = "0.1.0-preview.37"
+        testInstrumentationRunner = "app.arioso.audiobook.BrowserSmokeInstrumentation"
+    }
+    buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".qa"
+            versionNameSuffix = "-qa"
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

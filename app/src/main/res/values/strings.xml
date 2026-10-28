@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Arioso</string>
+    <string name="widget_title_default">Arioso</string>
+    <string name="widget_play">Play</string>
     <string name="chapter_progress">Chapter %1$d of %2$d · %3$s left</string>
     <string name="output_route">Output: %1$s</string>
     <string name="repeat_off">A–B repeat</string>
     <string name="repeat_a">A set at %1$s</string>
     <string name="repeat_ab">Repeat %1$s–%2$s</string>
+    <string name="manual_chapter_default">Chapter at %1$s</string>
+    <string name="empty_library_title">Your shelf is waiting</string>
+    <string name="empty_library_detail">Choose audio stored on this device to start your library.</string>
+    <string name="empty_view_title">Nothing in this view</string>
+    <string name="empty_view_detail">Try another shelf or browsing tab.</string>
+    <string name="empty_search_detail">No matches. Clear the search or try a different shelf.</string>
 </resources>

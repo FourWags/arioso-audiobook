@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail if Dart's packaged APK gains any permission outside offline playback."""
+"""Fail if Arioso's packaged APK gains any permission outside offline playback."""
 
 import os
 import shutil
@@ -8,8 +8,11 @@ import sys
 from pathlib import Path
 
 
-EXPECTED = {
-    "package: app.dart.audiobook",
+ALLOWED_PACKAGES = {
+    "package: app.arioso.audiobook",
+    "package: app.arioso.audiobook.qa",
+}
+EXPECTED_PERMISSIONS = {
     "uses-permission: name='android.permission.FOREGROUND_SERVICE'",
     "uses-permission: name='android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK'",
 }
@@ -42,7 +45,9 @@ def main() -> int:
         print(f"Could not inspect APK permissions: {exc}", file=sys.stderr)
         return 2
     found = output.splitlines()
-    if len(found) != len(EXPECTED) or set(found) != EXPECTED:
+    if (len(found) != len(EXPECTED_PERMISSIONS) + 1
+            or found[0] not in ALLOWED_PACKAGES
+            or set(found[1:]) != EXPECTED_PERMISSIONS):
         print("Offline permission gate failed:", file=sys.stderr)
         print(output, file=sys.stderr)
         return 1

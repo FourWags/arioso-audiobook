@@ -1,5 +1,5 @@
 <resources>
-    <style name="DartTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+    <style name="AriosoTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:colorAccent">#724151</item>
         <item name="android:statusBarColor">#F2EEEB</item>
         <item name="android:navigationBarColor">#724151</item>

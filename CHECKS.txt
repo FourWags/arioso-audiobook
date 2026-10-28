@@ -1,0 +1,19 @@
+Arioso 0.1.0-preview.37 personal preview — 2026-10-28
+
+Identity and artifact
+- Android package: app.arioso.audiobook; version code 37; label Arioso.
+- Stable release APK: arioso-preview.apk, SHA-256 677e41cd94da66e2e4bb05511b585121b6e387e43e33a370e31b28a6858b0707.
+- Dedicated RSA-4096 app signer certificate SHA-256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88. APK Signature Scheme v2 verified, one signer. The key and password stay outside source and release assets; a byte-verified private copy is on a separate filesystem.
+- Source identity: SOURCE-SHA256SUMS, 87 files. The source package includes no original audio, user backups, private test captures, signing credentials, or historical release assets.
+
+Fresh checks on the candidate
+- Offline Gradle --rerun-tasks testDebugUnitTest, assembleRelease, bundleRelease, lintDebug: 85/85 tasks executed, successful; 60 unit tests in 24 suites, 0 failures or skips. Lint: 0 errors, 25 warnings, mainly untranslated strings and text concatenation. These warnings remain release debt.
+- Exact signed APK passed the commercial-input audit: packaged notices match, with no unreviewed media, fonts, assets, or native libraries. Offline permission gate passed: only FOREGROUND_SERVICE and FOREGROUND_SERVICE_MEDIA_PLAYBACK; no Internet, microphone, or broad storage permission.
+- Installed the exact signed APK on the Pixel 11 Pro XL as an update to the new Arioso package. Installed base APK readback SHA-256 matched the release APK. Existing Arioso app data remained. The app's file-access review reported 6/6 accessible, 6/6 saved read grants, 0 missing.
+- Before this update, the old-package full metadata backup was restored into the new package and each of six user-selected files was relinked through Android DocumentsUI. A new full Arioso export matched the earlier export on filename, title, author, series and number, saved position, duration, finished state, import time, last-played time, and playback speed for all six books. No audio was copied into the app or release. Private exports and UI captures are excluded from publication.
+- A separate synthetic Android 37 test imported an earlier-format backup, relinked a WAV whose provider returned a different URI, and retained one book, 12,345 ms saved place, and a synthetic note. The exact final debug APK reinstalled over that synthetic state without losing it.
+
+Scope and limits
+- This is a personal preview, not Google Play or sale qualification. Long playback, live accessibility, low-storage recovery, battery and thermal behavior, Android Auto host/device usability, and the optional local companion-reader handoff remain unqualified for this APK.
+- The internal companion-reader package/provider IDs remain for the optional handoff. They are technical integration identifiers, not Arioso branding. Removing them would disable that feature; its production signer pin needs a separate qualification when the companion app is ready.
+- GitHub Latest is an update-discovery designation. Publication and remote asset hash verification are recorded separately after upload. The retired Android package remains independent and cannot update this one.
