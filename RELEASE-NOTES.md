@@ -1,9 +1,11 @@
-# Arioso Preview 0.1.0-preview.37
+# Arioso Preview 0.1.0-preview.38
 
-Arioso is an offline audiobook player for audio files selected from the device. This preview uses the `app.arioso.audiobook` Android package and the new dedicated Arioso signing key. It cannot update the earlier Android package in place. Export a full metadata backup from an earlier install, import it in Arioso, and relink each audio file; keep the earlier install until the new library is checked.
+Appearance is now visible in the library, with grouped layout, color and app-icon previews and clear selected states. Split Shelf, Cover Grid and Compact Rows receive consistent control/progress polish, large-text support and landscape adjustments. An appearance-only reset keeps books, listening places and playback settings.
 
-The starting interface uses Split Shelf, with cascading series covers, an A–Z author index, a persistent mini-player, Black & Tan by default, other color palettes, and four system-font choices. Playback includes chapters, bookmarks, saved places, sleep controls, and pause on audio-output disconnect. The app has no Internet permission and bundles no audiobook.
+Three original charcoal, warm-cream and sesame-orange vector icons join the unchanged default: Page & sound, Sound arcs and Shiba headphones. Android adaptive resources include themed-icon monochrome layers where supported. The retained reference assets were not copied.
 
-The exact signed APK passed 60 fresh unit tests, privacy and commercial-input package checks, and an in-place Pixel install. All six migrated library entries retained their core metadata and saved positions; file access was 6/6 after update. See `CHECKS.txt` and `SHA256SUMS` for exact evidence and limits.
+This preview fixes icon changes dismissing the app's active task, and prevents screen creation from replacing per-book speed with the global default.
 
-This is a personal preview, not a Google Play production or sale-ready build. Long playback, live accessibility, battery and thermal behavior, Android Auto usability, and the optional companion-reader handoff still need testing. The MIT source license permits redistribution; audio files retain their own rights.
+Validation: 60 unit tests pass; final QA runs pass 26 checks on Android 29 and 27 on Android 36; the speed-retention instrumentation passes on both; the exact signed release APK passes 13 smoke checks on each. Signing identity is unchanged, offline/packaging checks pass, and lint has no new warnings. See CHECKS.txt and SHA256SUMS for identities and limits.
+
+This is a personal Preview, not production or Google Play qualification. Phone Obtainium upgrades, long playback, live accessibility, battery/thermals, Android Auto and companion-reader handoff remain unqualified for this APK. No audiobook is bundled. Publication is pending separate approval; any phone update must use Obtainium.

@@ -18,8 +18,8 @@ import java.nio.charset.StandardCharsets;
 
 /** Read-only saved places for a trusted local Library. Audio and bookmarks stay private. */
 public final class AriosoPositionProvider extends ContentProvider {
-    private static final String LIBRARY_PACKAGE = "app.petallibrary";
-    private static final String LIBRARY_CERT =
+    private static final String READER_SYNC_PACKAGE = "app.petallibrary";
+    private static final String READER_SYNC_CERT =
             "386f097ea7de3749f0b0cc87e433d0f8a8a70cebb1848d7e7cb4bd5f60cff2b4";
 
     @Override public boolean onCreate() { return true; }
@@ -28,19 +28,19 @@ public final class AriosoPositionProvider extends ContentProvider {
         PackageManager pm = getContext().getPackageManager();
         String[] packages = pm.getPackagesForUid(Binder.getCallingUid());
         boolean named = false;
-        if (packages != null) for (String name : packages) named |= LIBRARY_PACKAGE.equals(name);
-        if (!named || !certificateMatches(pm)) throw new SecurityException("Trusted Library required");
+        if (packages != null) for (String name : packages) named |= READER_SYNC_PACKAGE.equals(name);
+        if (!named || !certificateMatches(pm)) throw new SecurityException("Trusted Reader Sync required");
     }
 
     static boolean certificateMatches(PackageManager pm) {
         try {
-            byte[] digest = new byte[LIBRARY_CERT.length() / 2];
+            byte[] digest = new byte[READER_SYNC_CERT.length() / 2];
             for (int i = 0; i < digest.length; i++)
-                digest[i] = (byte) Integer.parseInt(LIBRARY_CERT.substring(i * 2, i * 2 + 2), 16);
+                digest[i] = (byte) Integer.parseInt(READER_SYNC_CERT.substring(i * 2, i * 2 + 2), 16);
             if (Build.VERSION.SDK_INT >= 28)
-                return pm.hasSigningCertificate(LIBRARY_PACKAGE, digest, PackageManager.CERT_INPUT_SHA256);
+                return pm.hasSigningCertificate(READER_SYNC_PACKAGE, digest, PackageManager.CERT_INPUT_SHA256);
             @SuppressWarnings("deprecation")
-            android.content.pm.PackageInfo info = pm.getPackageInfo(LIBRARY_PACKAGE,
+            android.content.pm.PackageInfo info = pm.getPackageInfo(READER_SYNC_PACKAGE,
                     PackageManager.GET_SIGNATURES);
             @SuppressWarnings("deprecation")
             android.content.pm.Signature[] signatures = info.signatures;

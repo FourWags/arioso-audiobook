@@ -105,6 +105,8 @@ public final class MainActivity extends Activity {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final int MAX_ARTWORK_WAITERS = 24;
     private ThemeCatalog.Theme theme;
+    private AppearanceDialog appearanceDialog;
+    private String appearancePage;
     private int STONE;
     private int PAPER;
     private int INK;
@@ -356,7 +358,12 @@ public final class MainActivity extends Activity {
         buildUi();
         if (state != null) search.setText(state.getString("search", ""));
         renderLibrary();
-        if (state == null) handleLibraryContinue(getIntent());
+        if (state != null && state.getString("appearancePage") != null) {
+            String page = state.getString("appearancePage");
+            int scrollY = state.getInt("appearanceScroll", 0);
+            getWindow().getDecorView().post(() -> showAppearance(page, scrollY));
+        }
+        if (state == null) handleReaderSyncContinue(getIntent());
         if (state != null) {
             String resumeTree = state.getString("activeFolderTree");
             if (resumeTree != null) scanFolder(Uri.parse(resumeTree));
@@ -367,7 +374,7 @@ public final class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         if ("app.petallibrary.CONTINUE".equals(intent.getAction())) {
-            handleLibraryContinue(intent);
+            handleReaderSyncContinue(intent);
             setIntent(new Intent(this, MainActivity.class));
             return;
         }
@@ -394,6 +401,8 @@ public final class MainActivity extends Activity {
     }
 
     @Override protected void onSaveInstanceState(Bundle outState) {
+        outState.putString("appearancePage", appearancePage);
+        if (appearanceDialog != null) outState.putInt("appearanceScroll", appearanceDialog.scrollY());
         outState.putInt("libraryTab", libraryTab);
         outState.putString("selectedAuthor", selectedAuthor);
         outState.putString("selectedSeries", selectedSeries);
@@ -463,7 +472,8 @@ public final class MainActivity extends Activity {
         root.setBackgroundColor(STONE);
         root.setPadding(pad, dp(8), pad, 0);
         root.setOnApplyWindowInsetsListener((v, insets) -> {
-            root.setPadding(pad, dp(8) + insets.getSystemWindowInsetTop(), pad,
+            root.setPadding(pad + insets.getSystemWindowInsetLeft(),
+                    dp(8) + insets.getSystemWindowInsetTop(), pad + insets.getSystemWindowInsetRight(),
                     insets.getSystemWindowInsetBottom());
             return insets;
         });
@@ -472,48 +482,50 @@ public final class MainActivity extends Activity {
         top.setOrientation(LinearLayout.VERTICAL);
         top.setPadding(dp(4), dp(2), dp(4), dp(4));
         boolean largeText = fontScale >= 2f;
+        boolean shortLandscape = getResources().getConfiguration().screenHeightDp < 500
+                && getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
         TextView brand = text("ARIOSO", extraLargeText ? 11 : 12);
         brand.setTextColor(INK);
         brand.setLetterSpacing(0.12f);
         brand.setPadding(0, 0, 0, 0);
-        top.addView(brand);
+        if (!shortLandscape) top.addView(brand);
         libraryEyebrow = text("YOUR LIBRARY", 10);
         libraryEyebrow.setLetterSpacing(0.12f);
         libraryEyebrow.setPadding(0, dp(2), 0, 0);
-        if (!LibraryPresentation.SPLIT.equals(libraryLayout)) top.addView(libraryEyebrow);
+        if (!shortLandscape && !LibraryPresentation.SPLIT.equals(libraryLayout)) top.addView(libraryEyebrow);
         libraryHeading = text("Authors", extraLargeText ? 22 : 25);
         libraryHeading.setTypeface(android.graphics.Typeface.create("serif", android.graphics.Typeface.BOLD));
         libraryHeading.setPadding(0, 0, 0, 0);
         if (android.os.Build.VERSION.SDK_INT >= 28) libraryHeading.setAccessibilityHeading(true);
-        top.addView(libraryHeading);
+        if (!shortLandscape) top.addView(libraryHeading);
         libraryCount = text("Your books stay on this device", extraLargeText ? 11 : 12);
         libraryCount.setPadding(0, 0, 0, dp(2));
-        top.addView(libraryCount);
+        if (!shortLandscape) top.addView(libraryCount);
         LinearLayout headerControls = new LinearLayout(this);
         headerControls.setGravity(Gravity.CENTER_VERTICAL);
-        Button themes = button("Colors");
-        themes.setTextSize(extraLargeText ? 12 : 13);
-        themes.setMinHeight(dp(44));
-        if (LibraryPresentation.SPLIT.equals(libraryLayout))
-            themes.setBackground(control(STONE, STONE, PAPER));
-        themes.setOnClickListener(v -> chooseTheme());
+        Button appearance = button("Appearance");
+        appearance.setTextSize(13);
+        appearance.setContentDescription("Appearance: change library layout, colors and app icon");
+        appearance.setOnClickListener(v -> showAppearance("home", 0));
         playerShortcut = button("Player");
-        playerShortcut.setTextSize(extraLargeText ? 12 : 13);
-        playerShortcut.setMinHeight(dp(44));
+        playerShortcut.setTextSize(13);
         playerShortcut.setBackground(control(PLUM, PLUM, PAPER));
         playerShortcut.setTextColor(ON_ACTION);
         playerShortcut.setOnClickListener(v -> showPlayer(true));
         Button more = libraryActionsButton();
-        more.setTextSize(extraLargeText ? 12 : 13);
-        if (LibraryPresentation.SPLIT.equals(libraryLayout))
-            more.setBackground(control(STONE, STONE, PAPER));
-        LinearLayout.LayoutParams themePlacement = new LinearLayout.LayoutParams(0, dp(44), 1);
-        themePlacement.rightMargin = dp(6);
-        headerControls.addView(themes, themePlacement);
-        LinearLayout.LayoutParams playerPlacement = new LinearLayout.LayoutParams(0, dp(44), 1);
+        more.setTextSize(13);
+        if (largeText && !shortLandscape) {
+            // A full-width primary entry keeps its label visible at 200% font scale.
+            top.addView(appearance, new LinearLayout.LayoutParams(-1, -2));
+        } else {
+            LinearLayout.LayoutParams place = new LinearLayout.LayoutParams(0, -2, 1.35f);
+            place.rightMargin = dp(6);
+            headerControls.addView(appearance, place);
+        }
+        LinearLayout.LayoutParams playerPlacement = new LinearLayout.LayoutParams(0, -2, 1);
         playerPlacement.rightMargin = dp(6);
         headerControls.addView(playerShortcut, playerPlacement);
-        headerControls.addView(more, new LinearLayout.LayoutParams(0, dp(44), 1));
+        headerControls.addView(more, new LinearLayout.LayoutParams(0, -2, 1));
         top.addView(headerControls);
         LinearLayout.LayoutParams headerPlace = new LinearLayout.LayoutParams(-1, -2);
         headerPlace.bottomMargin = dp(2);
@@ -596,7 +608,7 @@ public final class MainActivity extends Activity {
             shelfFilter.setBackground(control(STONE, STONE, PAPER));
             layoutButton.setBackground(control(STONE, STONE, PAPER));
         }
-        if (extraLargeText) {
+        if (extraLargeText && !shortLandscape) {
             libraryPanel.addView(shelfFilter);
             libraryPanel.addView(layoutButton);
         } else {
@@ -610,7 +622,7 @@ public final class MainActivity extends Activity {
         }
         scopeButton = button("All authors");
         scopeButton.setTextSize(13);
-        scopeButton.setMinHeight(dp(36));
+        scopeButton.setMinHeight(dp(48));
         scopeButton.setOnClickListener(v -> {
             if (selectedSeries != null) {
                 selectedSeries = null;
@@ -633,8 +645,8 @@ public final class MainActivity extends Activity {
         jumpIndexButton.setMinHeight(dp(36));
         jumpIndexButton.setBackground(control(STONE, STONE, PAPER));
         jumpIndexButton.setOnClickListener(v -> jumpToAuthor());
-        indexBar.addView(jumpIndexButton, new LinearLayout.LayoutParams(dp(64), dp(36)));
-        libraryPanel.addView(indexBar, new LinearLayout.LayoutParams(-1, dp(36)));
+        indexBar.addView(jumpIndexButton, new LinearLayout.LayoutParams(dp(64), dp(48)));
+        libraryPanel.addView(indexBar, new LinearLayout.LayoutParams(-1, dp(48)));
         shelf = new GridView(this);
         shelf.setId(View.generateViewId());
         shelf.setFocusable(true);
@@ -697,7 +709,9 @@ public final class MainActivity extends Activity {
         miniProgress = text("", 12);
         miniWords.addView(miniTitle);
         miniWords.addView(miniProgress);
-        miniWords.setContentDescription("Open player");
+        miniWords.setContentDescription("Open player and saved listening place");
+        miniWords.setMinimumHeight(dp(48));
+        miniWords.setFocusable(true);
         miniWords.setOnClickListener(v -> showPlayer(true));
         miniPlayer.addView(miniWords, new LinearLayout.LayoutParams(0, -2, 1));
         miniPlay = button("Play");
@@ -854,6 +868,9 @@ public final class MainActivity extends Activity {
         float savedSpeed = prefs.contains("speed_value") ? prefs.getFloat("speed_value", 1f)
                 : new float[]{1f, 1.25f, 1.5f, 2f}[
                 Math.max(0, Math.min(3, prefs.getInt("speed_index", 0)))];
+        JSONObject selectedForSpeed = find(currentUri);
+        if (selectedForSpeed != null)
+            savedSpeed = (float) selectedForSpeed.optDouble("playbackSpeed", savedSpeed);
         speedIndex = 2;
         for (int i = 0; i < speedValues.length; i++)
             if (Math.abs(speedValues[i] - savedSpeed) < .001f) { speedIndex = i; break; }
@@ -861,7 +878,9 @@ public final class MainActivity extends Activity {
         speed.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
             @Override public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                if (selectingBookSpeed) return;
+                // Spinner emits an initial/programmatic callback as well as user changes.
+                // Recreating Appearance must not write the global default over a book's speed.
+                if (selectingBookSpeed || position == speedIndex) return;
                 if (position != speedIndex) {
                     if (!prefs.edit().putInt("speed_index", position)
                             .putFloat("speed_value", speedValues[position]).commit()) {
@@ -975,46 +994,57 @@ public final class MainActivity extends Activity {
         playerShortcut.setOnClickListener(v -> showPlayer(!showingPlayer));
     }
 
-    private void chooseTheme() {
-        String[] names = new String[ThemeCatalog.ALL.length];
-        for (int i = 0; i < names.length; i++) names[i] = ThemeCatalog.ALL[i].name;
-        new AlertDialog.Builder(this)
-                .setTitle("Arioso theme")
-                .setSingleChoiceItems(names, ThemeCatalog.indexOf(theme.id), (dialog, which) -> {
-                    ThemeCatalog.Theme chosen = ThemeCatalog.ALL[which];
-                    dialog.dismiss();
-                    if (chosen.id.equals(theme.id)) return;
-                    if (!prefs.edit().putString("theme_id", chosen.id).commit()) {
-                        message("Could not save the theme");
-                        return;
+    private void showAppearance(String page, int scrollY) {
+        if (isFinishing() || isDestroyed()) return;
+        if (appearanceDialog != null) appearanceDialog.dismissSilently();
+        appearancePage = page;
+        appearanceDialog = new AppearanceDialog(this, theme, libraryLayout, uiFont, page, scrollY,
+                new AppearanceDialog.Listener() {
+                    @Override public void navigate(String destination) { showAppearance(destination, 0); }
+                    @Override public void layout(String id) { saveAppearance("library_layout", id); }
+                    @Override public void colors(String id) { saveAppearance("theme_id", id); }
+                    @Override public void icon(LauncherIcons.Icon icon) {
+                        int position = appearanceDialog.scrollY();
+                        try {
+                            LauncherIcons.select(MainActivity.this, icon);
+                            showAppearance("icons", position);
+                        } catch (RuntimeException error) { message("Could not change app icon. Please try again."); }
                     }
-                    recreate();
-                })
+                    @Override public void reset() { resetAppearance(); }
+                    @Override public void closed() { appearancePage = null; appearanceDialog = null; }
+                });
+        appearanceDialog.show();
+    }
+
+    private void saveAppearance(String key, String value) {
+        if (value.equals(prefs.getString(key, null))) return;
+        if (!prefs.edit().putString(key, value).commit()) {
+            message("Could not save appearance. Please try again."); return;
+        }
+        recreate();
+    }
+
+    private void resetAppearance() {
+        new AlertDialog.Builder(this).setTitle("Reset appearance?")
+                .setMessage("Use Split Shelf, Black & Tan colors, the system font and the original Arioso icon. Your books, listening places and playback settings are kept.")
                 .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private String layoutName() {
-        if (LibraryPresentation.SPLIT.equals(libraryLayout)) return "Layout: Split Shelf";
-        if (LibraryPresentation.COMPACT.equals(libraryLayout)) return "Layout: Compact Rows";
-        return "Layout: Cover Grid";
-    }
-
-    private void chooseLibraryLayout() {
-        String[] names = {"Split Shelf · indexed authors and books", "Cover Grid", "Compact Rows"};
-        String[] ids = {LibraryPresentation.SPLIT, LibraryPresentation.GRID, LibraryPresentation.COMPACT};
-        int selected = 0;
-        for (int i = 0; i < ids.length; i++) if (ids[i].equals(libraryLayout)) selected = i;
-        new AlertDialog.Builder(this).setTitle("Library layout")
-                .setSingleChoiceItems(names, selected, (dialog, which) -> {
-                    dialog.dismiss();
-                    if (ids[which].equals(libraryLayout)) return;
-                    if (!prefs.edit().putString("library_layout", ids[which]).commit()) {
-                        message("Could not save library layout"); return;
+                .setPositiveButton("Reset appearance", (dialog, which) -> {
+                    LauncherIcons.Icon previous = LauncherIcons.current(this);
+                    try { LauncherIcons.select(this, LauncherIcons.ALL[0]); }
+                    catch (RuntimeException error) { message("Could not reset app icon. Appearance kept."); return; }
+                    if (!prefs.edit().remove("library_layout").remove("compact_library")
+                            .remove("theme_id").remove("ui_font").commit()) {
+                        try { LauncherIcons.select(this, previous); }
+                        catch (RuntimeException error) { message("Could not restore app icon. Choose it again in Appearance."); return; }
+                        message("Could not save appearance. Please try again."); return;
                     }
                     recreate();
-                }).setNegativeButton("Cancel", null).show();
+                }).show();
     }
+
+    private String layoutName() { return "Layout: " + AppearanceDialog.layoutName(libraryLayout); }
+
+    private void chooseLibraryLayout() { showAppearance("layouts", 0); }
 
     private void chooseInterfaceFont() {
         String[] names = {"System default", "Bookish serif", "Clean sans", "Compact sans"};
@@ -3793,6 +3823,11 @@ public final class MainActivity extends Activity {
         detail.setTextColor(INK);
         detail.setMaxLines(2);
         words.addView(detail);
+        if (entry.book != null) {
+            int percent = entry.book.optBoolean("finished") ? 100
+                    : ListeningTools.progressPercent(entry.book.optLong("position"), entry.book.optLong("duration"));
+            if (percent > 0) words.addView(progressLine(percent, -1));
+        }
         row.addView(words, new LinearLayout.LayoutParams(0, -2, 1));
         Button actions = button("Actions");
         actions.setContentDescription("Actions for " + entry.label);
@@ -4419,14 +4454,14 @@ public final class MainActivity extends Activity {
                         new AlertDialog.Builder(this).setTitle("Reader has another saved place")
                             .setMessage("Reading “" + sourceTitle + "” · "
                                 + Math.round(source * 100) + "%\nArioso · "
-                                + Math.round(target * 100) + "%\n\nReview both places in the library transfer app before changing either one.")
+                                + Math.round(target * 100) + "%\n\nReview both places in Reader Sync before changing either one.")
                             .setNegativeButton("Keep Arioso place", null)
-                            .setPositiveButton("Review in Library", (dialog, which) -> {
+                            .setPositiveButton("Review in Reader Sync", (dialog, which) -> {
                                 Intent review = new Intent();
                                 review.setClassName("app.petallibrary", "app.petallibrary.MainActivity");
                                 review.putExtra("catalogPairId", pair);
                                 try { startActivity(review); }
-                                catch (RuntimeException failure) { message("The library transfer app is unavailable"); }
+                                catch (RuntimeException failure) { message("Reader Sync is unavailable"); }
                             }).show();
                     });
                 }
@@ -4582,7 +4617,9 @@ public final class MainActivity extends Activity {
     private void refreshMiniPlayer() {
         if (miniPlayer == null || miniTitle == null || miniPlay == null) return;
         JSONObject selected = find(currentUri);
-        boolean visible = selected != null && !showingPlayer;
+        boolean limitedLandscape = getResources().getConfiguration().screenHeightDp < 500
+                && getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+        boolean visible = selected != null && !showingPlayer && !limitedLandscape;
         miniPlayer.setVisibility(visible ? View.VISIBLE : View.GONE);
         if (!visible) return;
         miniTitle.setText(bookTitle(selected));
@@ -4592,7 +4629,8 @@ public final class MainActivity extends Activity {
         miniPlay.setText(ready && playback.isPlaying() ? "Pause" : "Play");
         int position = ready ? playback.position() : selected.optInt("position");
         int duration = ready ? playback.duration() : selected.optInt("duration");
-        miniProgress.setText(time(position) + " / " + time(duration));
+        miniProgress.setText((playback != null && playback.isPlaying() ? "Playing · " : "Resume · ")
+                + time(position) + " / " + time(duration));
         miniPlayer.setContentDescription("Current book: " + bookTitle(selected)
                 + ", " + miniProgress.getText());
     }
@@ -5031,11 +5069,11 @@ public final class MainActivity extends Activity {
         refreshPlayerUi();
     }
 
-    private void handleLibraryContinue(Intent intent) {
+    private void handleReaderSyncContinue(Intent intent) {
         if (intent == null || !"app.petallibrary.CONTINUE".equals(intent.getAction())) return;
         if (!"app.petallibrary".equals(getCallingPackage())
                 || !AriosoPositionProvider.certificateMatches(getPackageManager())) {
-            message("A trusted Library launch is required");
+            message("A trusted Reader Sync launch is required");
             return;
         }
         String uri = intent.getStringExtra("bookUri");
@@ -5055,7 +5093,7 @@ public final class MainActivity extends Activity {
         if (!PositionSuggestion.fresh(System.currentTimeMillis(), createdAt)
                 || suggested < 0 || !PositionSuggestion.unchanged(expectedPosition,
                 expectedDuration, expectedPosition, expectedDuration)) {
-            message("Library suggestion is invalid; saved place unchanged");
+            message("Reader Sync suggestion is invalid; saved place unchanged");
             return;
         }
         new AlertDialog.Builder(this).setTitle("Continue listening here?")
@@ -5069,10 +5107,10 @@ public final class MainActivity extends Activity {
                 })
                 .setPositiveButton("Use suggested place", (dialog, which) -> {
                     if (!PositionSuggestion.fresh(System.currentTimeMillis(), createdAt)) {
-                        message("Library suggestion expired. Review both places again.");
+                        message("Reader Sync suggestion expired. Review both places again.");
                         return;
                     }
-                    applyLibrarySuggestion(uri, expectedPosition, expectedDuration, suggested);
+                    applyReaderSyncSuggestion(uri, expectedPosition, expectedDuration, suggested);
                 })
                 .show();
     }
@@ -5088,19 +5126,19 @@ public final class MainActivity extends Activity {
         return null;
     }
 
-    private void applyLibrarySuggestion(String uri, long expectedPosition,
+    private void applyReaderSyncSuggestion(String uri, long expectedPosition,
                                         long expectedDuration, int suggested) {
         JSONObject fresh = freshBook(uri);
         if (fresh == null || !PositionSuggestion.unchanged(fresh.optInt("position", -1),
                 fresh.optInt("duration", -1), expectedPosition, expectedDuration)
                 || sourceChanged(fresh)) {
-            message("Arioso's book or place changed. Review both places again in Library.");
+            message("Arioso's book or place changed. Review both places again in Reader Sync.");
             return;
         }
         if (playback != null && uri.equals(playback.currentUri())) {
             if (playback.isPlaying() || playback.isReady()
                     && playback.position() != expectedPosition) {
-                message("Pause playback and review the current place again in Library.");
+                message("Pause playback and review the current place again in Reader Sync.");
                 return;
             }
             if (playback.isReady()) {
@@ -5935,6 +5973,8 @@ public final class MainActivity extends Activity {
         activeFingerprintCheck = null;
         if (activeFolderScan != null) activeFolderScan.set(true);
         if (folderScanDialog != null) folderScanDialog.dismiss();
+        if (appearanceDialog != null) appearanceDialog.dismissSilently();
+        appearanceDialog = null;
         if (drivingDialog != null) drivingDialog.dismiss();
         folderScanDialog = null;
         activeFolderScan = null;

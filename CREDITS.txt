@@ -10,3 +10,5 @@ Work/synthetic/Artwork-Test.mp3 is generated sine-wave audio with generated test
 app/src/test/resources/artwork-tone.mp3 is a copy of that synthetic fixture for source-only parser regression tests. It is not bundled in the APK.
 Work/synthetic/Tagged-Test.mp3 is a copy of that generated tone with synthetic ID3 title and author tags; it is test-only and not bundled.
 app/src/test/resources/chapter-tone.m4a is a generated six-second AAC sine wave with generated chpl chapter markers. It is included only in the source test suite and not in the APK. GStreamer was used to generate the synthetic AAC base file; its binaries are not bundled.
+
+The Page & sound, Sound arcs and Shiba headphones launcher options were drawn from original geometric vector paths for Arioso in Preview 38. Their adaptive foregrounds and monochrome layers use charcoal (#1C1B1A), warm cream (#F6EFE2), and sesame orange (#D98242). No path or pixel from Work/retained-arioso-icons was reused; the retained assets remain outside the APK because their separate provenance is unresolved. These new designs are covered by the project MIT license; no trademark uniqueness claim is made.

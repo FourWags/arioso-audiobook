@@ -15,12 +15,43 @@
         <provider android:name=".AriosoPositionProvider"
             android:authorities="${applicationId}.petalpositions" android:exported="true"
             tools:ignore="ExportedContentProvider" />
-        <activity android:name=".MainActivity" android:exported="true">
+        <!-- Keep MainActivity enabled for saved shortcuts, widget/service and reader intents. -->
+        <activity android:name=".MainActivity" android:exported="true" />
+        <activity android:name=".LauncherActivity" android:exported="false"
+            android:theme="@android:style/Theme.NoDisplay" android:taskAffinity=""
+            android:noHistory="true" android:excludeFromRecents="true" />
+        <activity-alias android:name=".LauncherDefault" android:targetActivity=".LauncherActivity"
+            android:enabled="true" android:exported="true"
+            android:icon="@drawable/ic_arioso" android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias android:name=".LauncherPage" android:targetActivity=".LauncherActivity"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_page" android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".LauncherArcs" android:targetActivity=".LauncherActivity"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_arcs" android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".LauncherShiba" android:targetActivity=".LauncherActivity"
+            android:enabled="false" android:exported="true"
+            android:icon="@mipmap/ic_shiba" android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
         <service android:name=".PlaybackService" android:exported="false"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
