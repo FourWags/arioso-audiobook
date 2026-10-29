@@ -1,11 +1,9 @@
-# Arioso Preview 0.1.0-preview.38
+# Arioso 0.1.0-preview.39 — repair Preview
 
-Appearance is now visible in the library, with grouped layout, color and app-icon previews and clear selected states. Split Shelf, Cover Grid and Compact Rows receive consistent control/progress polish, large-text support and landscape adjustments. An appearance-only reset keeps books, listening places and playback settings.
+This Preview prevents failed or malformed library reads from authorizing whole-library replacement. Saved metadata is preserved while reads fail, and writing resumes only after a complete successful reload. Store-level validation also protects direct replacement paths.
 
-Three original charcoal, warm-cream and sesame-orange vector icons join the unchanged default: Page & sound, Sound arcs and Shiba headphones. Android adaptive resources include themed-icon monochrome layers where supported. The retained reference assets were not copied.
+Validation: 60 fresh host tests passed; release lint reported no errors and 25 warnings. Six synthetic metadata-recovery scenarios passed in the separate .qa variant built from the same source. The exact dedicated-key signed APK passed six update/smoke checks on an isolated API 37 emulator: preview38 update accepted, appearance preference retained, settings survived restart, single launcher remained usable, code39 installed. Malformed-row fault injection was on the QA variant, not the signed release package.
 
-This preview fixes icon changes dismissing the app's active task, and prevents screen creation from replacing per-book speed with the global default.
+Personal Preview; not production, Google Play, or sale-readiness qualification. No physical phone installation or foreground interaction occurred. Real Obtainium phone upgrades, long-duration behavior, live assistive technology and power/thermal behavior remain unqualified for these artifacts.
 
-Validation: 60 unit tests pass; final QA runs pass 26 checks on Android 29 and 27 on Android 36; the speed-retention instrumentation passes on both; the exact signed release APK passes 13 smoke checks on each. Signing identity is unchanged, offline/packaging checks pass, and lint has no new warnings. See CHECKS.txt and SHA256SUMS for identities and limits.
-
-This is a personal Preview, not production or Google Play qualification. Phone Obtainium upgrades, long playback, live accessibility, battery/thermals, Android Auto and companion-reader handoff remain unqualified for this APK. No audiobook is bundled. Publication is pending separate approval; any phone update must use Obtainium.
+Use the existing Obtainium repository: https://github.com/FourWags/arioso-audiobook. Stable APK asset: `arioso-preview.apk`. Required corresponding source and notices are included in `arioso-source.zip`. See CHECKS.txt and SHA256SUMS for exact identities.

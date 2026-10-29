@@ -1,54 +1,19 @@
-Arioso Preview 0.1.0-preview.38 — VERIFIED LOCAL PERSONAL-PREVIEW CANDIDATE
-2026-10-29. Prepared for publication approval; not published or installed on the phone.
+Arioso 0.1.0-preview.39 / code 39
+Prepared 2026-10-29 UTC
 
-Identity
-- Android package app.arioso.audiobook; version code 38; version name 0.1.0-preview.38.
-- Exact signed release APK SHA-256: a2b9d8dce188de2a0177cc370c807f1bb964061571988c1632bb0d8cf96d902a.
-- Same dedicated RSA-4096 signer as Preview 37. Certificate SHA-256 d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88; APK v2/v3 verification passed, one signer. Credentials were not changed or copied into deliverables.
-- Corresponding source: 102 files; SOURCE-SHA256SUMS. Source ZIP SHA-256 556326f21085db675af069eeaa74ce29afac6db0e3a31c8bd0ac102699fe83a3.
-- QA APK SHA-256 d120076b3700539a2a7b10c1c7e7422cbcf6ee3884157eabb1f1157327dbaefe; final test APK SHA-256 27def03dfad259bc6df1af8eb6f38bdf8ee73e6065c0b8d5ffa8425160c01452.
+Repair source base: 5cddf0978e228728b5e6ef751d3fd936ea01c2fd
+Source branch: FourWags/arioso-audiobook main
+App code differs from that repaired base only by the version bump. Release evidence documents are refreshed.
+APK SHA256: 12614cb8a815610b7637e60a9ed283c9fa88fa9e58b7b3e234168fbcfc9fc79a
+Signing certificate SHA256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88
+Same package and signer as previous verified APK; version code strictly increased.
+Non-debuggable: verified
+ZIP alignment: verified for 16 KiB pages
 
-Implemented
-- Obvious Appearance entry in the library. Grouped Library layout, Colors and App icon choices with scrollable previews, current selections, large touch targets, labels and restoration of the current chooser/scroll after recreation.
-- Existing Split Shelf, Cover Grid and Compact Rows retained. Unified header targets, compact-row progress, explicit Playing/Resume listening-place labels. Short landscape reduces decorative header material and uses the existing Player shortcut instead of the mini-player to leave room for books. Side navigation-bar insets are respected.
-- Appearance-only reset confirms scope; books, notes, saved places, permissions and playback preferences are not reset. Font choice returns to system default as stated in the confirmation.
-- Original Arioso default icon preserved. Three newly authored vector options: Page & sound, Sound arcs, Shiba headphones. Charcoal/cream/sesame-orange geometry, adaptive resources, API33+ monochrome layers. No retained reference path or pixel reused. Retained assets remain excluded because separate licensing provenance is unresolved.
-- Four stable aliases, exactly one enabled by default. MainActivity remains enabled for explicit existing entry points. Separate-affinity no-display launcher handoff prevents the reproduced launcher task eviction. API33+ uses atomic alias changes; older APIs enable the replacement first and roll back on exceptions.
-- Fixed reproduced pre-existing spinner initialization: startup/recreation no longer writes the global speed over a selected book's per-book speed. A compiled integration regression seeds 1.25x against a 1x global default and asserts place/note retention through recreation.
+Fresh host results: {"errors": 0, "failures": 0, "skipped": 0, "tests": 60}
+Release lint: {"Warning": 25}
+Six synthetic metadata-recovery scenarios passed in the separate .qa variant built from the same source. The exact dedicated-key signed APK passed six update/smoke checks on an isolated API 37 emulator: preview38 update accepted, appearance preference retained, settings survived restart, single launcher remained usable, code39 installed. Malformed-row fault injection was on the QA variant, not the signed release package.
 
-Final checks and exact limits
-- App source host build: offline Gradle --rerun-tasks testDebugUnitTest assembleDebug assembleDebugAndroidTest assembleRelease lintDebug; 119/119 tasks executed. 60 unit tests, zero failures/errors/skips.
-- The test-only emulator guard was then corrected from a fingerprint substring to the verified ranchu/goldfish hardware check. assembleDebugAndroidTest succeeded with 4 executed/42 up-to-date tasks; application QA and signed release APK hashes did not change. Both final integration runs executed, not cached.
-- Final QA APK: Android 29 full UI matrix 26/26 passed, Android 36 27/27 passed. Both cover visible Appearance groups, Back/dismiss, all layouts with previews/persistence, colors, chooser rotation, all four launcher icons/selected states/one launcher/process restart/direct MainActivity entry, cancel/reset scope, preserved book count/12345ms place/note/1.25x speed, 200% fonts and landscape navigation.
-- Final speed regression instrumentation: passed on Android 29 and 36. Startup plus screen recreation retained a per-book 1.25x speed, 12345ms place and note against a 1x global default.
-- Android 36's independent system-inset assertion passed: app clickable controls stay left of navigationBars frame [1794,0][1920,1080]. Final screenshot reviewed. Android 29 reported no visible right navigation strip; its 200% landscape screenshot was separately reviewed.
-- Exact signed release APK: fresh-install smoke passed 13/13 on Android 29 and 13/13 on Android 36. Tested default launch, grouped Appearance, saved layout/colors, every icon with selected preview and one launcher, process-stop/relaunch through each alias, and appearance-only reset. This was fresh installation on disposable emulators, not a phone update.
-- Lint: zero errors, 25 inherited warnings. IDs/severities/messages match the inherited report; no new warnings.
-- Exact signed APK offline permission gate and commercial-input packaging audit passed: only FOREGROUND_SERVICE and FOREGROUND_SERVICE_MEDIA_PLAYBACK; no Internet/microphone/storage permission added, notices match, no unreviewed assets/media/fonts/native libraries. New exported entry points are the launcher aliases; the no-display handoff is not exported.
-- Authoritative app source/build configuration byte-match the built workspace source. Source ZIP excludes private data, audio libraries, signing credentials and build caches. Test media already in app/src/test/resources remains source-only generated fixtures and is not in the APK.
-- A pre-existing local provider terminology change was preserved: LIBRARY_* names and 'Trusted Library' text became READER_SYNC_* and 'Trusted Reader Sync'. Its package ID, pinned certificate and authorization logic are unchanged. The provider file's task-start hash is 59ad0b4d836a6d59569498316ef965206c84ea149332a72ad4de284e3949e627; this task did not edit it. This is called out for any future source synchronization.
+Personal Preview; not production, Google Play, or sale-readiness qualification. No physical phone installation or foreground interaction occurred. Real Obtainium phone upgrades, long-duration behavior, live assistive technology and power/thermal behavior remain unqualified for these artifacts.
 
-Regression history
-- Early runtime testing reproduced alias task eviction despite DONT_KILL_APP. The separate-affinity launcher handoff fixed it; final QA and exact signed APK icon smoke tests both pass on both APIs.
-- Early runtime testing reproduced startup/recreation overwriting a selected book's 1.25x speed with the global 1x default. Initial/programmatic spinner callbacks now avoid writes; final instrumentation and full UI data-preservation checks pass on both APIs.
-- Early visual review found a landscape navigation-bar overlap. Final app applies horizontal window insets and passes the final system-frame assertion.
-- Earlier failure evidence is retained separately; final results are in qa-final. The initial 'no installation' ambiguity was clarified by the parent as no PHONE installation, permitting the final disposable-emulator work. No denial was bypassed.
-
-Distribution resolution (read-only)
-- Current repository https://github.com/FourWags/arioso-audiobook (public, repository ID 1435914084), default branch main. It contains full Android app source and release assets; no separate local release-index Git checkout was found.
-- Main was e5f315ce095c9cca9fbfc371f0fec95d8fe429b9 at readback; current Latest remains v0.1.0-preview.37, release ID 427085692, draft=false/prerelease=false. Its APK digest remains 677e41cd94da66e2e4bb05511b585121b6e387e43e33a370e31b28a6858b0707.
-- Only Preview 37 appeared in releases/tags, so Preview 38 was not already occupied at this readback. Preview 37 tag points to 08b40f7fdac66ecae83a77057864f91da30c10a4. Remote main has no .github workflow files; the README and existing publication record document locally built/signed APK plus matching source/notices/checksum assets.
-- Stable Obtainium asset is arioso-preview.apk, followed through this repository's Latest release. No GitHub file/ref/release was mutated. The app checkout has no .git metadata and no source push was attempted.
-
-Bounded preview status and remaining qualifications
-- This candidate is verified for the host/emulator scope above, not a production/Google Play qualification.
-- No phone UI, phone installation, microphone access or publication occurred. No Obtainium update was performed. A higher version code and unchanged signer are verified, but actual Obtainium in-place upgrade/pinned-launcher-placement behavior on the user's phone remains untested and may only be checked through Obtainium after separately approved publication.
-- Audio playback/SAF-grant integration, live TalkBack/Switch Access, themed-launcher UI, reboot migration, physical performance/battery/thermals, long playback, Android Auto and optional companion-reader handoff remain unqualified for this candidate. Existing playback/data-permission code was preserved.
-- Retained reference icons remain outside the APK because separate licensing provenance is unresolved. New geometric artwork is project-original MIT content; no trademark uniqueness claim is made.
-
-Publication requires separate approval
-- Proposed title Arioso Preview 0.1.0-preview.38; tag v0.1.0-preview.38; Latest, draft=false, prerelease=false. Preserve Preview 37 and all private recovery material.
-- Prepare a matching reviewed Preview 38 source commit/ref against the then-current main before tagging. Preserve the existing provenance commit and explicitly review the pre-existing terminology-only provider difference; do not tag old Preview 37 code and describe it as the matching new source. No force push/merge is authorized by this preparation.
-- Upload exactly the seven approved release assets named in PUBLICATION-PLAN.txt, then verify remote asset hashes, releases/latest and the latest-download APK digest. A phone update, if requested after that, must use Obtainium.
-
-Reference: https://developer.android.com/guide/topics/manifest/activity-alias-element
+Only retained, reviewed source/assets are included. Signing credentials, personal imports, private logs and build outputs are excluded. The source ZIP includes required binary build assets; generic GitHub source archives may omit these assets for Sumi.
