@@ -129,6 +129,7 @@ public final class MainActivity extends Activity {
             "favorite", "listenLater", "archived", "companionPdfUri", "voiceBoost",
             "skipSilence", "characters", "folderCoverUri"};
     private final List<JSONObject> books = new ArrayList<>();
+    private boolean libraryLoaded;
     private final LruCache<String, Bitmap> artwork = new LruCache<String, Bitmap>(8 * 1024 * 1024) {
         @Override protected int sizeOf(String key, Bitmap value) { return value.getByteCount(); }
     };
@@ -2503,6 +2504,7 @@ public final class MainActivity extends Activity {
     }
 
     private boolean finishRelink(String oldUri, Uri replacement) {
+        if (!libraryReadyForWrite()) return false;
         JSONObject item = find(oldUri);
         if (item == null) { message("The original listing is no longer available"); return false; }
         if (!LocalDocumentPolicy.accepts(replacement.getScheme(), replacement.getAuthority())) {
@@ -2520,7 +2522,7 @@ public final class MainActivity extends Activity {
         }
         boolean selected = oldUri.equals(currentUri);
         if (selected && playback != null) { playback.pause(); playback.saveNow(); playback.clear(); }
-        syncSavedProgress();
+        if (!libraryReadyForWrite()) { releaseReadGrant(replacement); return false; }
         String oldName = item.optString("name", "");
         String oldTree = item.optString("treeUri", "");
         try {
@@ -2575,7 +2577,10 @@ public final class MainActivity extends Activity {
 
     private void exportMetadata(Uri destination, char[] password, boolean catalogOnly) {
         savePosition();
-        syncSavedProgress();
+        if (!libraryReadyForWrite()) {
+            if (password != null) Arrays.fill(password, '\0');
+            return;
+        }
         final byte[] payload;
         try {
             JSONObject backup = new JSONObject();
@@ -2888,7 +2893,7 @@ public final class MainActivity extends Activity {
 
     private void applyRestore(List<JSONObject> candidates, boolean updateExisting) {
         savePosition();
-        syncSavedProgress();
+        if (!libraryReadyForWrite()) return;
         List<JSONObject> previous = new ArrayList<>(books);
         List<JSONObject> updated = new ArrayList<>(books);
         Set<String> seen = new HashSet<>();
@@ -2942,7 +2947,7 @@ public final class MainActivity extends Activity {
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Undo", (dialog, which) -> {
                     savePosition();
-                    syncSavedProgress();
+                    if (!libraryReadyForWrite()) return;
                     List<JSONObject> restored = new ArrayList<>();
                     try {
                         JSONArray entries = new JSONArray(checkpoint);
@@ -3044,6 +3049,7 @@ public final class MainActivity extends Activity {
         if (requestCode != PICK_AUDIO || resultCode != RESULT_OK || data == null) return;
         books.clear();
         readLibrary();
+        if (!libraryLoaded) return;
         List<Uri> selected = new ArrayList<>();
         ClipData clip = data.getClipData();
         if (clip != null) {
@@ -5892,28 +5898,43 @@ public final class MainActivity extends Activity {
     }
 
     private void readLibrary() {
+        libraryLoaded = false;
         boolean removedDerivedChapters = false;
+        List<JSONObject> loaded = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
         try {
             JSONArray array = LibraryStore.get(this).readAll();
-            for (int i = 0; i < Math.min(array.length(), 500); i++) {
+            if (array.length() > 500) throw new IllegalStateException("Library exceeds supported size");
+            for (int i = 0; i < array.length(); i++) {
                 JSONObject item = array.optJSONObject(i);
-                if (item != null && item.optString("uri").length() <= 4096
-                        && "content".equals(Uri.parse(item.optString("uri")).getScheme())
-                        && find(item.optString("uri")) == null) {
-                    if (item.has("chapters")) {
-                        item.remove("chapters");
-                        removedDerivedChapters = true;
-                    }
-                    books.add(item);
+                String uri = item == null ? "" : item.optString("uri");
+                if (item == null || uri.length() > 4096
+                        || !"content".equals(Uri.parse(uri).getScheme()) || !seen.add(uri))
+                    throw new IllegalStateException("Library contains an unreadable listing");
+                if (item.has("chapters")) {
+                    item.remove("chapters");
+                    removedDerivedChapters = true;
                 }
+                loaded.add(item);
             }
-        } catch (RuntimeException ignored) { message("Library storage is unavailable; saved data was not erased"); }
-        if (removedDerivedChapters && !saveLibraryNow(false))
+            books.clear();
+            books.addAll(loaded);
+            libraryLoaded = true;
+        } catch (RuntimeException ignored) {
+            message("Library storage could not be read. Saved data is kept; changes are paused. Reopen Arioso to retry.");
+        }
+        if (libraryLoaded && removedDerivedChapters && !saveLibraryNow(false))
             message("Could not compact derived chapter data; Arioso will retry later");
     }
 
+    private boolean libraryReadyForWrite() {
+        if (libraryLoaded && syncSavedProgress()) return true;
+        message("Library storage could not be read. Saved data is kept; reopen Arioso before making changes.");
+        return false;
+    }
+
     private boolean saveLibraryNow(boolean clearSelected) {
-        syncSavedProgress();
+        if (!libraryReadyForWrite()) return false;
         if (!clearSelected && playback != null && playback.isReady()) {
             JSONObject active = find(playback.currentUri());
             if (active != null) try {
@@ -5926,8 +5947,9 @@ public final class MainActivity extends Activity {
         return !clearSelected || prefs.edit().remove("selected_uri").commit();
     }
 
-    private void syncSavedProgress() {
-        // The service may advance while a picker or editor is open. Keep its latest progress.
+    private boolean syncSavedProgress() {
+        // A successful progress read cannot validate a list from a failed initial load.
+        if (!libraryLoaded) return false;
         try {
             JSONArray latest = LibraryStore.get(this).readAll();
             for (int i = 0; i < latest.length(); i++) {
@@ -5940,7 +5962,11 @@ public final class MainActivity extends Activity {
                 local.put("finished", stored.optBoolean("finished"));
                 if (stored.has("lastPlayedAt")) local.put("lastPlayedAt", stored.optLong("lastPlayedAt"));
             }
-        } catch (RuntimeException | JSONException ignored) { }
+            return true;
+        } catch (RuntimeException | JSONException ignored) {
+            libraryLoaded = false;
+            return false;
+        }
     }
 
     private String libraryJson() {

@@ -72,8 +72,18 @@ final class LibraryStore extends SQLiteOpenHelper {
         ensureMigrated();
         JSONArray books = new JSONArray();
         try (Cursor cursor = getReadableDatabase().rawQuery(
-                "SELECT data FROM books ORDER BY ordinal, uri", null)) {
-            while (cursor.moveToNext()) books.put(new JSONObject(cursor.getString(0)));
+                "SELECT uri, data FROM books ORDER BY ordinal, uri", null)) {
+            while (cursor.moveToNext()) {
+                String data = cursor.getString(1);
+                if (data.length() > 1048576 || books.length() >= 500)
+                    throw new SQLiteException("Stored library exceeds supported limits");
+                JSONObject item = new JSONObject(data);
+                String uri = item.optString("uri");
+                if (!uri.equals(cursor.getString(0)) || uri.length() > 4096
+                        || !"content".equals(android.net.Uri.parse(uri).getScheme()))
+                    throw new SQLiteException("Stored book link is invalid");
+                books.put(item);
+            }
         } catch (JSONException e) { throw new SQLiteException("Stored book metadata is invalid", e); }
         return books;
     }
@@ -85,6 +95,9 @@ final class LibraryStore extends SQLiteOpenHelper {
             SQLiteDatabase db = getWritableDatabase();
             db.beginTransaction();
             try {
+                // Validate the existing rows inside the same transaction before any delete.
+                // Other callers (relink, history cleanup) must not bypass failed-read safety.
+                readAll();
                 db.delete("books", null, null);
                 for (int i = 0; i < items.size(); i++) insert(db, items.get(i), i);
                 db.setTransactionSuccessful();
