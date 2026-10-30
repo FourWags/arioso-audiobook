@@ -1,6 +1,6 @@
-# Arioso 0.1.0-preview.42 — Clearer Library Rail
+# Arioso 0.1.0-preview.43 — Direct Standalone Books
 
-Home now has its own recent-books view, ordered by the most recent play or import. Authors retains the alphabetical author index. The rail uses distinct original icons for Home, Authors, Series, Books, listening history, and appearance; long-pressing an icon shows its label. The Arioso initial at the top is decorative rather than a second Home button.
+An author's page now lists standalone titles as books alongside any real series. Tap the author, then tap a standalone title to open it; series still opens its books in order. The author page shows a scoped book count and keeps Authors highlighted in the rail. Global Series and Books browsing remain available.
 
 This is a personal Preview distributed through GitHub Latest for Obtainium testing. The Android package, offline permission set, and dedicated signing identity remain unchanged. See CHECKS.txt for exact checks and limitations. Publication as Latest does not establish Google Play or production readiness.
 

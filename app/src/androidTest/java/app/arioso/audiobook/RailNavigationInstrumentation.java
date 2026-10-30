@@ -39,7 +39,11 @@ public final class RailNavigationInstrumentation extends Instrumentation {
             JSONObject newer = new JSONObject().put("uri", "content://synthetic/newer")
                     .put("title", "Newer story").put("author", "Zoe Author")
                     .put("importedAt", 2000L);
-            if (!LibraryStore.get(app).replaceAll(Arrays.asList(older, newer)))
+            JSONObject seriesBook = new JSONObject().put("uri", "content://synthetic/series")
+                    .put("title", "Series opener").put("author", "Ada Author")
+                    .put("series", "Ada Chronicles").put("seriesNumber", "1")
+                    .put("importedAt", 1500L);
+            if (!LibraryStore.get(app).replaceAll(Arrays.asList(older, newer, seriesBook)))
                 throw new AssertionError("Could not seed synthetic books");
             seeded = true;
             prefs.edit().putString("library_layout", "rail").commit();
@@ -66,7 +70,35 @@ public final class RailNavigationInstrumentation extends Instrumentation {
             if (!"Authors".contentEquals(tabs[0].getContentDescription()))
                 throw new AssertionError("Author rail label missing");
             capture(app, "rail-authors.png");
-            result.putString("rail", "Home recent books and Authors alphabetical groups differ; labels present");
+            openEntry(main, firstItem(main));
+            waitForIdleSync();
+            assertHeading(main, "Ada Author");
+            if (!tabs[0].isSelected() || tabs[1].isSelected())
+                throw new AssertionError("Author page highlights the wrong rail destination");
+            if (!((TextView) field(main, "libraryCount")).getText().toString()
+                    .startsWith("2 books by Ada Author"))
+                throw new AssertionError("Author book count still shows the full library");
+            assertFirst(main, "Older story");
+            List<?> authorItems = (List<?>) field(main, "shelfItems");
+            if (authorItems.size() != 2 || field(authorItems.get(0), "book") == null
+                    || field(authorItems.get(1), "book") != null
+                    || !"Ada Chronicles".equals(field(authorItems.get(1), "label")))
+                throw new AssertionError("Standalone book and real series were not separate destinations");
+            capture(app, "rail-author-detail.png");
+            openEntry(main, authorItems.get(1));
+            waitForIdleSync();
+            if (!"Ada Chronicles".equals(field(main, "selectedSeries"))
+                    || (int) field(main, "libraryTab") != 2)
+                throw new AssertionError("Real series did not open its books");
+            runOnMainSync(tabs[0]::performClick);
+            waitForIdleSync();
+            openEntry(main, firstItem(main));
+            waitForIdleSync();
+            openEntry(main, firstItem(main));
+            waitForIdleSync();
+            if (!(boolean) field(main, "showingPlayer") || field(main, "selectedSeries") != null)
+                throw new AssertionError("Standalone book did not open directly from the author page");
+            result.putString("rail", "Home recent books, alphabetical Authors, direct standalone book, and series navigation passed");
             finish(Activity.RESULT_OK, result);
         } catch (Throwable error) {
             result.putString("rail", error.getClass().getSimpleName() + ": " + error.getMessage());
@@ -91,9 +123,24 @@ public final class RailNavigationInstrumentation extends Instrumentation {
     }
 
     private static Object field(Object instance, String name) throws Exception {
-        Field field = MainActivity.class.getDeclaredField(name);
+        Field field = instance.getClass().getDeclaredField(name);
         field.setAccessible(true);
         return field.get(instance);
+    }
+
+    private static Object firstItem(MainActivity activity) throws Exception {
+        List<?> items = (List<?>) field(activity, "shelfItems");
+        if (items.isEmpty()) throw new AssertionError("No shelf items");
+        return items.get(0);
+    }
+
+    private void openEntry(MainActivity activity, Object entry) throws Exception {
+        java.lang.reflect.Method method = MainActivity.class.getDeclaredMethod("openShelfEntry", entry.getClass());
+        method.setAccessible(true);
+        runOnMainSync(() -> {
+            try { method.invoke(activity, entry); }
+            catch (Exception error) { throw new RuntimeException(error); }
+        });
     }
 
     private static void assertHeading(MainActivity activity, String expected) throws Exception {

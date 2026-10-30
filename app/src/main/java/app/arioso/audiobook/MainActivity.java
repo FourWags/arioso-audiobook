@@ -1107,8 +1107,9 @@ public final class MainActivity extends Activity {
         int selectedFill = ThemeCatalog.DEFAULT_ID.equals(theme.id) ? 0xffd8b48c : PLUM;
         int selectedInk = ThemeCatalog.DEFAULT_ID.equals(theme.id) ? 0xff211b15 : ON_ACTION;
         setRailSelection(railHomeButton, railHomeSelected, selectedFill, selectedInk);
+        int selectedTab = selectedAuthor != null && selectedSeries == null ? 0 : libraryTab;
         for (int i = 0; i < railTabButtons.length; i++)
-            setRailSelection(railTabButtons[i], !railHomeSelected && libraryTab == i,
+            setRailSelection(railTabButtons[i], !railHomeSelected && selectedTab == i,
                     selectedFill, selectedInk);
     }
 
@@ -3529,6 +3530,7 @@ public final class MainActivity extends Activity {
         syncBackCallback();
         if (libraryHeading != null) {
             libraryHeading.setText(railHomeSelected && railEnabled ? "Your library"
+                    : libraryTab == 1 && selectedAuthor != null ? selectedAuthor
                     : libraryTab == 0 ? "Authors"
                     : libraryTab == 1 ? "Series" : "Books");
             libraryEyebrow.setText(railEnabled ? "YOUR LIBRARY"
@@ -3537,11 +3539,21 @@ public final class MainActivity extends Activity {
             playerShortcut.setVisibility(find(currentUri) == null ? View.GONE : View.VISIBLE);
         }
         refreshRailSelection();
-        if (libraryCount != null) libraryCount.setText(railEnabled
-                ? (books.isEmpty() ? "Your books stay on this device"
-                    : books.size() + (books.size() == 1 ? " book" : " books") + " · Offline")
-                : books.isEmpty() ? "Your books stay on this device"
-                    : books.size() + (books.size() == 1 ? " book" : " books") + " · Offline library");
+        if (libraryCount != null) {
+            int count = 0;
+            for (JSONObject book : books) {
+                if (selectedAuthor != null && !selectedAuthor.equalsIgnoreCase(
+                        metadata(book, "author", UNKNOWN_AUTHOR))) continue;
+                if (selectedSeries != null && !selectedSeries.equalsIgnoreCase(
+                        metadata(book, "series", STANDALONE))) continue;
+                count++;
+            }
+            String scope = selectedSeries != null ? " in " + selectedSeries
+                    : selectedAuthor != null ? " by " + selectedAuthor : "";
+            libraryCount.setText(books.isEmpty() ? "Your books stay on this device"
+                    : count + (count == 1 ? " book" : " books") + scope
+                    + (railEnabled ? " · Offline" : " · Offline library"));
+        }
         renderContinueListening();
         List<JSONObject> ordered = new ArrayList<>(books);
         Collections.sort(ordered, (a, b) -> LibraryOrdering.compare(
@@ -3581,9 +3593,12 @@ public final class MainActivity extends Activity {
                     && !metadata(item, "narrator", "").toLowerCase(Locale.ROOT).contains(query)
                     && !metadata(item, "edition", "").toLowerCase(Locale.ROOT).contains(query)
                     && !metadata(item, "tags", "").toLowerCase(Locale.ROOT).contains(query)) continue;
-            if (libraryTab == 2) {
+            boolean standaloneBook = libraryTab == 1 && selectedAuthor != null
+                    && STANDALONE.equalsIgnoreCase(series);
+            if (libraryTab == 2 || standaloneBook) {
                 String partGroup = metadata(item, "partGroup", "");
-                String groupKey = LibraryOrdering.bookGroupKey(author, series, bookTitle(item),
+                String groupKey = (standaloneBook ? "book:" : "")
+                        + LibraryOrdering.bookGroupKey(author, series, bookTitle(item),
                         partGroup, metadata(item, "seriesNumber", ""));
                 ShelfItem entry = groups.get(groupKey);
                 if (entry == null) {
@@ -3593,13 +3608,14 @@ public final class MainActivity extends Activity {
                     entry.series = series;
                     entry.label = partGroup.isEmpty() ? bookTitle(item) : partGroup;
                     groups.put(groupKey, entry);
-                    shelfItems.add(entry);
+                    if (libraryTab == 2) shelfItems.add(entry);
                 }
                 entry.covers.add(item);
                 if (!partGroup.isEmpty()) entry.parts.add(item);
                 if (entry.parts.isEmpty()) {
                     String order = metadata(item, "seriesNumber", "");
-                    entry.subtitle = STANDALONE.equals(series) ? author
+                    entry.subtitle = standaloneBook ? "Standalone book"
+                            : STANDALONE.equals(series) ? author
                             : series + (orderOf(item) == null ? "" : " · " + order);
                     if (item.optBoolean("finished")) entry.subtitle += " · Finished";
                     else {
@@ -3624,17 +3640,30 @@ public final class MainActivity extends Activity {
         }
         if (libraryTab != 2) {
             for (ShelfItem entry : groups.values()) {
+                if (entry.book != null) {
+                    finishBookShelfEntry(entry);
+                    shelfItems.add(entry);
+                    continue;
+                }
                 int count = entry.covers.size();
                 int finished = 0;
                 for (JSONObject book : entry.covers) if (book.optBoolean("finished")) finished++;
                 entry.subtitle = libraryTab == 0 ? count + (count == 1 ? " book" : " books")
-                        : entry.author + " · " + count + (count == 1 ? " book" : " books")
+                        : (selectedAuthor == null ? entry.author + " · " : "")
+                        + count + (count == 1 ? " book" : " books")
                         + " · " + finished + " finished";
                 if (pinnedGroups().contains(groupKey(entry))) entry.subtitle = "Pinned · " + entry.subtitle;
                 placeLeadCoverFirst(entry);
                 shelfItems.add(entry);
             }
-            if (indexedLibraryLayout() && libraryTab == 0)
+            if (libraryTab == 1 && selectedAuthor != null)
+                shelfItems.sort((a, b) -> {
+                    int directBook = Boolean.compare(b.book != null, a.book != null);
+                    if (directBook != 0) return directBook;
+                    return Boolean.compare(b.book == null && pinnedGroups().contains(groupKey(b)),
+                            a.book == null && pinnedGroups().contains(groupKey(a)));
+                });
+            else if (indexedLibraryLayout() && libraryTab == 0)
                 shelfItems.sort((a, b) -> {
                     int pinnedOrder = Boolean.compare(pinnedGroups().contains(groupKey(b)),
                             pinnedGroups().contains(groupKey(a)));
@@ -3643,24 +3672,7 @@ public final class MainActivity extends Activity {
             else shelfItems.sort((a, b) -> Boolean.compare(
                     pinnedGroups().contains(groupKey(b)), pinnedGroups().contains(groupKey(a))));
         }
-        else for (ShelfItem entry : shelfItems) {
-            if (entry.parts.isEmpty()) {
-                if (entry.covers.size() > 1) entry.subtitle = entry.covers.size()
-                        + " editions · " + entry.author;
-                continue;
-            }
-            entry.parts.sort((a, b) -> {
-                BigDecimal left = LibraryOrdering.parseOrder(metadata(a, "partOrder", ""));
-                BigDecimal right = LibraryOrdering.parseOrder(metadata(b, "partOrder", ""));
-                if (left != null && right != null) return left.compareTo(right);
-                if (left != null) return -1;
-                if (right != null) return 1;
-                return bookTitle(a).compareToIgnoreCase(bookTitle(b));
-            });
-            entry.book = entry.parts.get(0);
-            entry.subtitle = entry.parts.size() + (entry.parts.size() == 1 ? " part" : " parts")
-                    + " · " + entry.author;
-        }
+        else for (ShelfItem entry : shelfItems) finishBookShelfEntry(entry);
         if (home) shelfItems.sort((a, b) -> Long.compare(recentActivity(b), recentActivity(a)));
         for (int i = 0; i < tabButtons.length; i++) {
             if (indexedLibraryLayout()) {
@@ -3687,6 +3699,25 @@ public final class MainActivity extends Activity {
         recentBooksHeading.setVisibility(home && !shelfItems.isEmpty() ? View.VISIBLE : View.GONE);
         if (scoped) scopeButton.setText(selectedSeries == null ? "← All authors" : "← " + selectedAuthor + " series");
         shelfAdapter.notifyDataSetChanged();
+    }
+
+    private void finishBookShelfEntry(ShelfItem entry) {
+        if (entry.parts.isEmpty()) {
+            if (entry.covers.size() > 1) entry.subtitle = entry.covers.size()
+                    + " editions · " + entry.author;
+            return;
+        }
+        entry.parts.sort((a, b) -> {
+            BigDecimal left = LibraryOrdering.parseOrder(metadata(a, "partOrder", ""));
+            BigDecimal right = LibraryOrdering.parseOrder(metadata(b, "partOrder", ""));
+            if (left != null && right != null) return left.compareTo(right);
+            if (left != null) return -1;
+            if (right != null) return 1;
+            return bookTitle(a).compareToIgnoreCase(bookTitle(b));
+        });
+        entry.book = entry.parts.get(0);
+        entry.subtitle = entry.parts.size() + (entry.parts.size() == 1 ? " part" : " parts")
+                + " · " + entry.author;
     }
 
     private long recentActivity(ShelfItem entry) {
@@ -3786,7 +3817,8 @@ public final class MainActivity extends Activity {
             place.topMargin = dp(i * 5);
             stack.addView(cover, place);
         }
-        TextView category = text(libraryTab == 0 ? "AUTHOR" : libraryTab == 1 ? "SERIES" : "BOOK", 10);
+        TextView category = text(entry.book != null ? "BOOK"
+                : libraryTab == 0 ? "AUTHOR" : "SERIES", 10);
         category.setTextColor(INK);
         category.setLetterSpacing(0.1f);
         category.setPadding(0, dp(3), 0, 0);
@@ -3819,26 +3851,7 @@ public final class MainActivity extends Activity {
         entryActions.setOnClickListener(v -> showEntryActions(entry));
         tile.setContentDescription(entry.label + ", " + entry.subtitle);
         tile.setFocusable(true);
-        tile.setOnClickListener(v -> {
-            if (libraryTab == 0) {
-                railHomeSelected = false;
-                selectedAuthor = entry.author;
-                selectedSeries = null;
-                libraryTab = 1;
-                renderLibrary();
-            } else if (libraryTab == 1) {
-                railHomeSelected = false;
-                selectedAuthor = entry.author;
-                selectedSeries = entry.series;
-                libraryTab = 2;
-                renderLibrary();
-            } else if (entry.book != null) {
-                if (!entry.parts.isEmpty() && entry.parts.size() > 1) showParts(entry, false);
-                else if (entry.parts.isEmpty() && entry.covers.size() > 1)
-                    showEditionChoices(entry, false);
-                else { open(entry.book); showPlayer(true); }
-            }
-        });
+        tile.setOnClickListener(v -> openShelfEntry(entry));
         tile.setOnLongClickListener(v -> { showEntryActions(entry); return true; });
         applyInterfaceFont(tile);
         return tile;
@@ -3861,6 +3874,17 @@ public final class MainActivity extends Activity {
                 if (android.os.Build.VERSION.SDK_INT >= 28) letter.setAccessibilityHeading(true);
                 item.addView(letter);
             }
+        } else if (libraryTab == 1 && selectedAuthor != null) {
+            boolean book = entry.book != null;
+            boolean firstInSection = position == 0 || (shelfItems.get(position - 1).book != null) != book;
+            if (firstInSection) {
+                TextView section = text(book ? "STANDALONE BOOKS" : "SERIES", 11);
+                section.setTypeface(null, android.graphics.Typeface.BOLD);
+                section.setLetterSpacing(0.1f);
+                section.setPadding(dp(2), dp(10), 0, dp(3));
+                if (android.os.Build.VERSION.SDK_INT >= 28) section.setAccessibilityHeading(true);
+                item.addView(section);
+            }
         } else if (libraryTab == 2 && !(railHomeSelected && railEnabled)) {
             String section = LibraryPresentation.bookSection(entry.author, entry.series);
             String previous = position == 0 ? null : LibraryPresentation.bookSection(
@@ -3879,7 +3903,7 @@ public final class MainActivity extends Activity {
             }
         }
 
-        if (libraryTab == 1) {
+        if (libraryTab == 1 && entry.book == null) {
             LinearLayout seriesCard = new LinearLayout(this);
             seriesCard.setOrientation(LinearLayout.VERTICAL);
             seriesCard.setPadding(dp(12), dp(12), dp(12), dp(8));
@@ -3947,12 +3971,12 @@ public final class MainActivity extends Activity {
             if (libraryTab == 0 && !entry.covers.isEmpty())
                 row.addView(splitCoverStack(entry, dp(54), dp(70)),
                         new LinearLayout.LayoutParams(dp(64), dp(70)));
-            else if (libraryTab == 2 && lead != null)
+            else if (entry.book != null && lead != null)
                 row.addView(coverView(lead), new LinearLayout.LayoutParams(dp(44), dp(60)));
             LinearLayout words = new LinearLayout(this);
             words.setOrientation(LinearLayout.VERTICAL);
             words.setPadding(dp(10), 0, dp(3), 0);
-            if (libraryTab == 2) {
+            if (entry.book != null) {
                 String number = entry.book == null ? "" : metadata(entry.book, "seriesNumber", "");
                 TextView status = text((number.isEmpty() ? "BOOK" : "BOOK " + number)
                         + (entry.book != null && entry.book.optBoolean("finished") ? " · FINISHED" : ""), 10);
@@ -3961,7 +3985,7 @@ public final class MainActivity extends Activity {
             }
             TextView name = text(entry.label, libraryTab == 0 ? 18 : 16);
             name.setTypeface(android.graphics.Typeface.create("serif", android.graphics.Typeface.BOLD));
-            name.setMaxLines(libraryTab == 0 || libraryTab == 2 ? 2 : 1);
+            name.setMaxLines(libraryTab == 0 || entry.book != null ? 2 : 1);
             name.setEllipsize(android.text.TextUtils.TruncateAt.END);
             name.setPadding(0, 0, 0, 0);
             words.addView(name);
@@ -4053,7 +4077,12 @@ public final class MainActivity extends Activity {
     }
 
     private void openShelfEntry(ShelfItem entry) {
-        if (libraryTab == 0) {
+        if (entry.book != null) {
+            if (!entry.parts.isEmpty() && entry.parts.size() > 1) showParts(entry, false);
+            else if (entry.parts.isEmpty() && entry.covers.size() > 1)
+                showEditionChoices(entry, false);
+            else { open(entry.book); showPlayer(true); }
+        } else if (libraryTab == 0) {
             railHomeSelected = false;
             selectedAuthor = entry.author;
             selectedSeries = null;
@@ -4065,11 +4094,6 @@ public final class MainActivity extends Activity {
             selectedSeries = entry.series;
             libraryTab = 2;
             renderLibrary();
-        } else if (entry.book != null) {
-            if (!entry.parts.isEmpty() && entry.parts.size() > 1) showParts(entry, false);
-            else if (entry.parts.isEmpty() && entry.covers.size() > 1)
-                showEditionChoices(entry, false);
-            else { open(entry.book); showPlayer(true); }
         }
     }
 
