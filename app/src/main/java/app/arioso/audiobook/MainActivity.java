@@ -228,6 +228,11 @@ public final class MainActivity extends Activity {
     private final List<ShelfItem> shelfItems = new ArrayList<>();
     private LinearLayout libraryPanel;
     private LinearLayout headerPanel;
+    private View librarySurface;
+    private View railHomeButton;
+    private View[] railTabButtons;
+    private boolean railEnabled;
+    private boolean railHomeSelected;
     private ScrollView playerPanel;
     private Button playerShortcut;
     private Button[] tabButtons;
@@ -344,6 +349,7 @@ public final class MainActivity extends Activity {
         currentUri = prefs.getString("selected_uri", null);
         if (state != null) {
             libraryTab = state.getInt("libraryTab", 0);
+            railHomeSelected = state.getBoolean("railHomeSelected", false);
             selectedAuthor = state.getString("selectedAuthor");
             selectedSeries = state.getString("selectedSeries");
             showingPlayer = state.getBoolean("showingPlayer", false);
@@ -405,6 +411,7 @@ public final class MainActivity extends Activity {
         outState.putString("appearancePage", appearancePage);
         if (appearanceDialog != null) outState.putInt("appearanceScroll", appearanceDialog.scrollY());
         outState.putInt("libraryTab", libraryTab);
+        outState.putBoolean("railHomeSelected", railHomeSelected);
         outState.putString("selectedAuthor", selectedAuthor);
         outState.putString("selectedSeries", selectedSeries);
         outState.putBoolean("showingPlayer", showingPlayer);
@@ -464,6 +471,10 @@ public final class MainActivity extends Activity {
         int pad = dp(12);
         float fontScale = getResources().getConfiguration().fontScale;
         boolean extraLargeText = fontScale >= 2f;
+        int screenWidthDp = getResources().getConfiguration().screenWidthDp;
+        railEnabled = LibraryPresentation.RAIL.equals(libraryLayout)
+                && fontScale < 1.6f && screenWidthDp >= 360
+                && getResources().getConfiguration().screenHeightDp >= 600;
         extraLargeLibrary = extraLargeText;
         int searchHeight = dp(Math.max(44, Math.round((extraLargeText ? 26 : 30) * fontScale)));
         int tabHeight = dp(Math.max(44, Math.round((extraLargeText ? 24 : 34) * fontScale)));
@@ -471,13 +482,27 @@ public final class MainActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(STONE);
-        root.setPadding(pad, dp(8), pad, 0);
+        root.setPadding(railEnabled ? 0 : pad, dp(8), railEnabled ? 0 : pad, 0);
         root.setOnApplyWindowInsetsListener((v, insets) -> {
-            root.setPadding(pad + insets.getSystemWindowInsetLeft(),
-                    dp(8) + insets.getSystemWindowInsetTop(), pad + insets.getSystemWindowInsetRight(),
+            root.setPadding((railEnabled ? 0 : pad) + insets.getSystemWindowInsetLeft(),
+                    dp(8) + insets.getSystemWindowInsetTop(),
+                    (railEnabled ? 0 : pad) + insets.getSystemWindowInsetRight(),
                     insets.getSystemWindowInsetBottom());
             return insets;
         });
+        LinearLayout libraryColumn = new LinearLayout(this);
+        libraryColumn.setOrientation(LinearLayout.VERTICAL);
+        if (railEnabled) {
+            LinearLayout surface = new LinearLayout(this);
+            surface.setOrientation(LinearLayout.HORIZONTAL);
+            surface.addView(makeLibraryRail(), new LinearLayout.LayoutParams(dp(66), -1));
+            libraryColumn.setPadding(dp(12), 0, dp(12), 0);
+            surface.addView(libraryColumn, new LinearLayout.LayoutParams(0, -1, 1));
+            librarySurface = surface;
+        } else {
+            librarySurface = libraryColumn;
+        }
+        root.addView(librarySurface, new LinearLayout.LayoutParams(-1, 0, 1));
         LinearLayout top = new LinearLayout(this);
         headerPanel = top;
         top.setOrientation(LinearLayout.VERTICAL);
@@ -489,7 +514,7 @@ public final class MainActivity extends Activity {
         brand.setTextColor(INK);
         brand.setLetterSpacing(0.12f);
         brand.setPadding(0, 0, 0, 0);
-        if (!shortLandscape) top.addView(brand);
+        if (!shortLandscape && !railEnabled) top.addView(brand);
         libraryEyebrow = text("YOUR LIBRARY", 10);
         libraryEyebrow.setLetterSpacing(0.12f);
         libraryEyebrow.setPadding(0, dp(2), 0, 0);
@@ -515,7 +540,16 @@ public final class MainActivity extends Activity {
         playerShortcut.setOnClickListener(v -> showPlayer(true));
         Button more = libraryActionsButton();
         more.setTextSize(13);
-        if (largeText && !shortLandscape) {
+        if (railEnabled) {
+            LinearLayout topBar = new LinearLayout(this);
+            topBar.setGravity(Gravity.CENTER_VERTICAL);
+            topBar.addView(brand, new LinearLayout.LayoutParams(0, dp(48), 1));
+            more.setText("⋮");
+            more.setContentDescription("Library actions");
+            more.setBackground(control(STONE, STONE, PAPER));
+            topBar.addView(more, new LinearLayout.LayoutParams(dp(48), dp(48)));
+            top.addView(topBar, 0);
+        } else if (largeText && !shortLandscape) {
             // A full-width primary entry keeps its label visible at 200% font scale.
             top.addView(appearance, new LinearLayout.LayoutParams(-1, -2));
         } else {
@@ -523,18 +557,20 @@ public final class MainActivity extends Activity {
             place.rightMargin = dp(6);
             headerControls.addView(appearance, place);
         }
-        LinearLayout.LayoutParams playerPlacement = new LinearLayout.LayoutParams(0, -2, 1);
-        playerPlacement.rightMargin = dp(6);
-        headerControls.addView(playerShortcut, playerPlacement);
-        headerControls.addView(more, new LinearLayout.LayoutParams(0, -2, 1));
-        top.addView(headerControls);
+        if (!railEnabled) {
+            LinearLayout.LayoutParams playerPlacement = new LinearLayout.LayoutParams(0, -2, 1);
+            playerPlacement.rightMargin = dp(6);
+            headerControls.addView(playerShortcut, playerPlacement);
+            headerControls.addView(more, new LinearLayout.LayoutParams(0, -2, 1));
+            top.addView(headerControls);
+        }
         LinearLayout.LayoutParams headerPlace = new LinearLayout.LayoutParams(-1, -2);
         headerPlace.bottomMargin = dp(2);
-        root.addView(top, headerPlace);
+        libraryColumn.addView(top, headerPlace);
 
         libraryPanel = new LinearLayout(this);
         libraryPanel.setOrientation(LinearLayout.VERTICAL);
-        root.addView(libraryPanel, new LinearLayout.LayoutParams(-1, 0, 1));
+        libraryColumn.addView(libraryPanel, new LinearLayout.LayoutParams(-1, 0, 1));
         search = new EditText(this);
         search.setSingleLine(true);
         search.setTextSize(extraLargeText ? 14 : 16);
@@ -580,6 +616,7 @@ public final class MainActivity extends Activity {
             button.setTextSize(extraLargeText ? 11 : 14);
             button.setOnClickListener(v -> {
                 libraryTab = tab;
+                railHomeSelected = false;
                 selectedAuthor = null;
                 selectedSeries = null;
                 renderLibrary();
@@ -605,11 +642,13 @@ public final class MainActivity extends Activity {
         layoutButton = button(layoutName());
         layoutButton.setTextSize(extraLargeText ? 11 : 13);
         layoutButton.setOnClickListener(v -> chooseLibraryLayout());
-        if (LibraryPresentation.SPLIT.equals(libraryLayout)) {
+        if (indexedLibraryLayout()) {
             shelfFilter.setBackground(control(STONE, STONE, PAPER));
             layoutButton.setBackground(control(STONE, STONE, PAPER));
         }
-        if (extraLargeText && !shortLandscape) {
+        if (railEnabled) {
+            // The rail keeps layout choices in Appearance and shelf choices in Library actions.
+        } else if (extraLargeText && !shortLandscape) {
             libraryPanel.addView(shelfFilter);
             libraryPanel.addView(layoutButton);
         } else {
@@ -625,6 +664,7 @@ public final class MainActivity extends Activity {
         scopeButton.setTextSize(13);
         scopeButton.setMinHeight(dp(48));
         scopeButton.setOnClickListener(v -> {
+            railHomeSelected = false;
             if (selectedSeries != null) {
                 selectedSeries = null;
                 libraryTab = 1;
@@ -651,9 +691,9 @@ public final class MainActivity extends Activity {
         shelf = new GridView(this);
         shelf.setId(View.generateViewId());
         shelf.setFocusable(true);
-        search.setNextFocusDownId(tabButtons[0].getId());
+        search.setNextFocusDownId(railEnabled ? shelf.getId() : tabButtons[0].getId());
         for (Button tab : tabButtons) tab.setNextFocusDownId(shelf.getId());
-        shelf.setNextFocusUpId(tabButtons[0].getId());
+        shelf.setNextFocusUpId(railEnabled ? search.getId() : tabButtons[0].getId());
         int availableDp = Math.round(getResources().getDisplayMetrics().widthPixels
                 / getResources().getDisplayMetrics().density);
         shelf.setNumColumns(LibraryPresentation.GRID.equals(libraryLayout)
@@ -727,7 +767,7 @@ public final class MainActivity extends Activity {
         miniPlay.setOnClickListener(v -> toggle());
         miniPlayer.addView(miniPlay, new LinearLayout.LayoutParams(dp(76), dp(48)));
         libraryPanel.addView(miniPlayer);
-        libraryPanel.addView(tabStrip);
+        if (!railEnabled) libraryPanel.addView(tabStrip);
 
         playerPanel = new ScrollView(this);
         LinearLayout playerContent = new LinearLayout(this);
@@ -978,6 +1018,108 @@ public final class MainActivity extends Activity {
         showPlayer(showingPlayer);
     }
 
+    private LinearLayout makeLibraryRail() {
+        LinearLayout rail = new LinearLayout(this);
+        rail.setOrientation(LinearLayout.VERTICAL);
+        rail.setGravity(Gravity.CENTER_HORIZONTAL);
+        rail.setPadding(dp(5), dp(8), dp(5), dp(8));
+        rail.setBackgroundColor(blend(STONE, PAPER, 0.2f));
+        TextView brand = text("A", 23);
+        brand.setTypeface(android.graphics.Typeface.create("serif", android.graphics.Typeface.BOLD));
+        brand.setGravity(Gravity.CENTER);
+        brand.setPadding(0, 0, 0, 0);
+        int brandFill = ThemeCatalog.DEFAULT_ID.equals(theme.id) ? 0xffd8b48c : PLUM;
+        brand.setTextColor(ThemeCatalog.DEFAULT_ID.equals(theme.id) ? 0xff211b15 : ON_ACTION);
+        brand.setBackground(control(brandFill, brandFill, PAPER));
+        brand.setContentDescription("Arioso home");
+        brand.setFocusable(true);
+        brand.setOnClickListener(v -> navigateRailHome());
+        LinearLayout.LayoutParams brandPlace = new LinearLayout.LayoutParams(dp(46), dp(46));
+        brandPlace.bottomMargin = dp(20);
+        rail.addView(brand, brandPlace);
+        railHomeButton = railItem(android.R.drawable.ic_menu_view, "Home", this::navigateRailHome);
+        rail.addView(railHomeButton, railPlace());
+        railTabButtons = new View[3];
+        String[] names = {"Authors", "Series", "Books"};
+        int[] icons = {android.R.drawable.ic_menu_myplaces,
+                android.R.drawable.ic_menu_sort_by_size, android.R.drawable.ic_menu_agenda};
+        for (int i = 0; i < railTabButtons.length; i++) {
+            final int tab = i;
+            railTabButtons[i] = railItem(icons[i], names[i], () -> {
+                railHomeSelected = false;
+                libraryTab = tab;
+                selectedAuthor = null;
+                selectedSeries = null;
+                renderLibrary();
+                shelf.setSelection(0);
+            });
+            rail.addView(railTabButtons[i], railPlace());
+        }
+        rail.addView(railItem(android.R.drawable.ic_menu_recent_history,
+                "Listening history", this::showListeningHistory), railPlace());
+        rail.addView(new View(this), new LinearLayout.LayoutParams(1, 0, 1));
+        rail.addView(railItem(android.R.drawable.ic_menu_preferences,
+                "Appearance and settings", () -> showAppearance("home", 0)), railPlace());
+        return rail;
+    }
+
+    private FrameLayout railItem(int icon, String label, Runnable action) {
+        FrameLayout target = new FrameLayout(this);
+        target.setContentDescription(label);
+        target.setFocusable(true);
+        target.setClickable(true);
+        target.setMinimumHeight(dp(52));
+        target.setOnClickListener(v -> action.run());
+        ImageView image = new ImageView(this);
+        image.setImageResource(icon);
+        image.setImageTintList(ColorStateList.valueOf(INK));
+        image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        FrameLayout.LayoutParams place = new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER);
+        target.addView(image, place);
+        return target;
+    }
+
+    private LinearLayout.LayoutParams railPlace() {
+        LinearLayout.LayoutParams place = new LinearLayout.LayoutParams(dp(54), dp(54));
+        place.bottomMargin = dp(7);
+        return place;
+    }
+
+    private void navigateRailHome() {
+        railHomeSelected = true;
+        libraryTab = 0;
+        selectedAuthor = null;
+        selectedSeries = null;
+        selectedShelf = "All books";
+        search.setText("");
+        renderLibrary();
+        shelf.setSelection(0);
+    }
+
+    private void refreshRailSelection() {
+        if (!railEnabled || railTabButtons == null) return;
+        int selectedFill = ThemeCatalog.DEFAULT_ID.equals(theme.id) ? 0xffd8b48c : PLUM;
+        int selectedInk = ThemeCatalog.DEFAULT_ID.equals(theme.id) ? 0xff211b15 : ON_ACTION;
+        setRailSelection(railHomeButton, railHomeSelected, selectedFill, selectedInk);
+        for (int i = 0; i < railTabButtons.length; i++)
+            setRailSelection(railTabButtons[i], !railHomeSelected && libraryTab == i,
+                    selectedFill, selectedInk);
+    }
+
+    private void setRailSelection(View target, boolean selected, int selectedFill, int selectedInk) {
+        if (target.isSelected() == selected && target.getBackground() != null) return;
+        target.setSelected(selected);
+        target.setBackground(control(selected ? selectedFill : blend(STONE, PAPER, 0.2f),
+                selected ? selectedFill : blend(STONE, PAPER, 0.2f), PAPER));
+        if (target instanceof ViewGroup && ((ViewGroup) target).getChildCount() > 0) {
+            View child = ((ViewGroup) target).getChildAt(0);
+            if (child instanceof ImageView)
+                ((ImageView) child).setImageTintList(ColorStateList.valueOf(selected ? selectedInk : INK));
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 30)
+            target.setStateDescription(selected ? "Selected" : "");
+    }
+
     private void showPlayer(boolean show) {
         showingPlayer = show;
         if (!show) {
@@ -988,6 +1130,7 @@ public final class MainActivity extends Activity {
         if (!show && search != null) { syncSavedProgress(); renderLibrary(); }
         headerPanel.setVisibility(show ? View.GONE : View.VISIBLE);
         libraryPanel.setVisibility(show ? View.GONE : View.VISIBLE);
+        librarySurface.setVisibility(show ? View.GONE : View.VISIBLE);
         playerPanel.setVisibility(show ? View.VISIBLE : View.GONE);
         refreshMiniPlayer();
         if (show && search != null) {
@@ -1033,7 +1176,7 @@ public final class MainActivity extends Activity {
 
     private void resetAppearance() {
         new AlertDialog.Builder(this).setTitle("Reset appearance?")
-                .setMessage("Use Split Shelf, Black & Tan colors, the system font and the original Arioso icon. Your books, listening places and playback settings are kept.")
+                .setMessage("Use Library Rail, Black & Tan colors, the system font and the original Arioso icon. Your books, listening places and playback settings are kept.")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Reset appearance", (dialog, which) -> {
                     LauncherIcons.Icon previous = LauncherIcons.current(this);
@@ -1047,6 +1190,11 @@ public final class MainActivity extends Activity {
                     }
                     recreate();
                 }).show();
+    }
+
+    private boolean indexedLibraryLayout() {
+        return LibraryPresentation.SPLIT.equals(libraryLayout)
+                || LibraryPresentation.RAIL.equals(libraryLayout);
     }
 
     private String layoutName() { return "Layout: " + AppearanceDialog.layoutName(libraryLayout); }
@@ -1082,6 +1230,25 @@ public final class MainActivity extends Activity {
     private Button libraryActionsButton() {
         Button actions = button("More");
         actions.setContentDescription("Library actions and interface font");
+        if (railEnabled) {
+            actions.setOnClickListener(v -> new AlertDialog.Builder(this)
+                    .setTitle("Library actions")
+                    .setItems(new String[]{"Add on-device audio", "Choose shelf", "Organize library",
+                            "Library backup", "Playback privacy", "Interface font", "About & licenses"},
+                            (dialog, which) -> {
+                                if (which == 0) new AlertDialog.Builder(this).setTitle("Add on-device audio")
+                                        .setItems(new String[]{"Choose files", "Choose a folder"},
+                                                (d, choice) -> { if (choice == 0) pickFiles(); else pickFolder(); })
+                                        .setNegativeButton("Cancel", null).show();
+                                else if (which == 1) chooseShelf();
+                                else if (which == 2) showLibraryTools();
+                                else if (which == 3) chooseBackupAction();
+                                else if (which == 4) choosePlaybackPrivacy();
+                                else if (which == 5) chooseInterfaceFont();
+                                else showAboutAndLicenses();
+                            }).setNegativeButton("Cancel", null).show());
+            return actions;
+        }
         actions.setOnClickListener(v -> new AlertDialog.Builder(this).setTitle("Library actions")
                 .setItems(extraLargeLibrary
                         ? new String[]{"Add on-device audio", "Organize library", "Library backup",
@@ -3355,15 +3522,20 @@ public final class MainActivity extends Activity {
     private void renderLibrary() {
         syncBackCallback();
         if (libraryHeading != null) {
-            libraryHeading.setText(libraryTab == 0 ? "Authors"
+            libraryHeading.setText(railHomeSelected && railEnabled ? "Your library"
+                    : libraryTab == 0 ? "Authors"
                     : libraryTab == 1 ? "Series" : "Books");
-            libraryEyebrow.setText(libraryTab == 0 ? "YOUR AUTHORS"
+            libraryEyebrow.setText(railEnabled ? "YOUR LIBRARY"
+                    : libraryTab == 0 ? "YOUR AUTHORS"
                     : libraryTab == 1 ? "YOUR SERIES" : "ALL YOUR BOOKS");
             playerShortcut.setVisibility(find(currentUri) == null ? View.GONE : View.VISIBLE);
         }
-        if (libraryCount != null) libraryCount.setText(books.isEmpty()
-                ? "Your books stay on this device"
-                : books.size() + (books.size() == 1 ? " book" : " books") + " · Offline library");
+        refreshRailSelection();
+        if (libraryCount != null) libraryCount.setText(railEnabled
+                ? (books.isEmpty() ? "Your books stay on this device"
+                    : books.size() + (books.size() == 1 ? " book" : " books") + " · Offline")
+                : books.isEmpty() ? "Your books stay on this device"
+                    : books.size() + (books.size() == 1 ? " book" : " books") + " · Offline library");
         renderContinueListening();
         List<JSONObject> ordered = new ArrayList<>(books);
         Collections.sort(ordered, (a, b) -> LibraryOrdering.compare(
@@ -3452,7 +3624,7 @@ public final class MainActivity extends Activity {
                 placeLeadCoverFirst(entry);
                 shelfItems.add(entry);
             }
-            if (LibraryPresentation.SPLIT.equals(libraryLayout) && libraryTab == 0)
+            if (indexedLibraryLayout() && libraryTab == 0)
                 shelfItems.sort((a, b) -> {
                     int pinnedOrder = Boolean.compare(pinnedGroups().contains(groupKey(b)),
                             pinnedGroups().contains(groupKey(a)));
@@ -3480,7 +3652,7 @@ public final class MainActivity extends Activity {
                     + " · " + entry.author;
         }
         for (int i = 0; i < tabButtons.length; i++) {
-            if (LibraryPresentation.SPLIT.equals(libraryLayout)) {
+            if (indexedLibraryLayout()) {
                 tabButtons[i].setBackground(control(i == libraryTab ? PAPER : STONE,
                         i == libraryTab ? PAPER : STONE, PAPER));
                 tabButtons[i].setTextColor(INK);
@@ -3499,7 +3671,7 @@ public final class MainActivity extends Activity {
         }
         shelfFilter.setText("Shelf: " + selectedShelf);
         scopeButton.setVisibility(scoped ? View.VISIBLE : View.GONE);
-        indexBar.setVisibility(LibraryPresentation.SPLIT.equals(libraryLayout)
+        indexBar.setVisibility(indexedLibraryLayout()
                 && libraryTab == 0 && selectedAuthor == null ? View.VISIBLE : View.GONE);
         if (scoped) scopeButton.setText(selectedSeries == null ? "← All authors" : "← " + selectedAuthor + " series");
         shelfAdapter.notifyDataSetChanged();
@@ -3572,7 +3744,7 @@ public final class MainActivity extends Activity {
     }
 
     private View makeTile(ShelfItem entry, int position) {
-        if (LibraryPresentation.SPLIT.equals(libraryLayout)) return makeSplitTile(entry, position);
+        if (indexedLibraryLayout()) return makeSplitTile(entry, position);
         if (compactLibrary) return makeCompactTile(entry);
         int columns = Math.max(2, shelf.getNumColumns());
         int cell = (getResources().getDisplayMetrics().widthPixels - dp(40)) / columns;
@@ -3630,11 +3802,13 @@ public final class MainActivity extends Activity {
         tile.setFocusable(true);
         tile.setOnClickListener(v -> {
             if (libraryTab == 0) {
+                railHomeSelected = false;
                 selectedAuthor = entry.author;
                 selectedSeries = null;
                 libraryTab = 1;
                 renderLibrary();
             } else if (libraryTab == 1) {
+                railHomeSelected = false;
                 selectedAuthor = entry.author;
                 selectedSeries = entry.series;
                 libraryTab = 2;
@@ -3861,11 +4035,13 @@ public final class MainActivity extends Activity {
 
     private void openShelfEntry(ShelfItem entry) {
         if (libraryTab == 0) {
+            railHomeSelected = false;
             selectedAuthor = entry.author;
             selectedSeries = null;
             libraryTab = 1;
             renderLibrary();
         } else if (libraryTab == 1) {
+            railHomeSelected = false;
             selectedAuthor = entry.author;
             selectedSeries = entry.series;
             libraryTab = 2;

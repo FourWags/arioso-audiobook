@@ -1,18 +1,24 @@
-Arioso 0.1.0-preview.40 / version code 40 — local candidate, 2026-10-29
+Arioso 0.1.0-preview.41 / version code 41 — Library Rail preview
+2026-10-30. Signed personal Preview candidate.
 
-APK: arioso-preview.apk
-SHA-256: e19cb7ff67d88ff6519e4ed00a14536cb792c0bed0c413916bb9514fcd59f949
-Package: app.arioso.audiobook
-Signer certificate SHA-256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88 (same as preview.39)
+Identity
+- Android package: app.arioso.audiobook; min SDK 26; target SDK 36.
+- Signed APK SHA-256: 291e5b914e3afdd74f73096a930c4def2611d6497898c08481ce3948cc1c2061.
+- Dedicated signer certificate SHA-256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88, unchanged from preview.40.
+- APK v2/v3 signature verification passed with one RSA-4096 signer.
 
-Changes: Turning Page with sound is the default launcher icon, with an adaptive and monochrome variant. The pending folder-picker improvement in the working tree is also included: a folder-first empty shelf and a device-storage starting URI.
+Scope and privacy
+- Adds Library Rail with Home, Authors, Series, Books, listening history and appearance access. It keeps the author index, series-order browsing, and mini-player. New installs default to it; existing saved layout choices remain.
+- The compact rail falls back to the established tab navigation when font scale is at least 1.6, width is below 360 dp, or height is below 600 dp.
+- No networking or new permissions. Packaged permission gate passed: only foreground-service and foreground-service-media-playback. Commercial packaging audit passed: notices match; no bundled audio, covers, fonts or native libraries.
 
-Validation performed on this source/artifact:
-- Offline Gradle assembleDebug and testDebugUnitTest: pass.
-- Offline Gradle assembleRelease and lintRelease: pass; 0 errors, 25 warnings.
-- Signed APK v2/v3 verification: pass; one signer.
-- Packaged permissions: only FOREGROUND_SERVICE and FOREGROUND_SERVICE_MEDIA_PLAYBACK.
-- Commercial input audit: notices match; no unreviewed media, assets, fonts, or native libraries.
-- Isolated Android 36 emulator: preview.39 -> preview.40 in-place install passed; launcher resolved and MainActivity resumed; crash buffer empty.
+Checks on this source and artifact
+- Offline Gradle --rerun-tasks testDebugUnitTest, assembleDebug, assembleDebugAndroidTest, assembleRelease and lintRelease passed: 116 tasks executed, 60 unit tests, zero failures and skips.
+- Release lint: zero errors, 25 warnings. Count matches preview.40; individual warning lineage was not re-proven.
+- Android 36 disposable emulator QA: Authors, Series, Books, Home, Appearance and library actions navigation passed. At 200% font and in landscape, the rail was absent and standard section tabs remained available.
+- Exact signed Preview.41 APK upgraded installed Preview.40 on the emulator. Version 41 launched with the rail visible and a running process; the emulator crash buffer had no Arioso crash entry.
+- A separate QA app was briefly installed on the user's Pixel, but the phone switched to ChatGPT before UI capture. That QA app was removed; the signed Arioso on the phone remains preview.40.
 
-Limits: Folder navigation and launcher appearance were not checked on the user's phone. No live audiobook, Bluetooth, accessibility, performance, or battery qualification in this candidate run. The first emulator boot failed because its saved graphics snapshot was incompatible; the no-snapshot boot passed. Public GitHub release and Obtainium phone update are pending.
+Limits
+- No personal audiobook, library data, phone release upgrade, live TalkBack/Switch Access, Bluetooth, Android Auto, long playback, or battery/performance qualification for this candidate.
+- The screenshot mockup and emulator check do not establish production or Google Play readiness. GitHub/Obtainium verification is recorded separately after publication.

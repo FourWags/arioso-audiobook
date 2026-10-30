@@ -92,8 +92,10 @@ final class AppearanceDialog {
     }
     private void layouts() {
         paragraph("Choose how you browse your library.");
-        String[] ids = {LibraryPresentation.SPLIT, LibraryPresentation.GRID, LibraryPresentation.COMPACT};
-        String[] details = {"Authors and series with an A–Z index", "Large covers for browsing",
+        String[] ids = {LibraryPresentation.RAIL, LibraryPresentation.SPLIT,
+                LibraryPresentation.GRID, LibraryPresentation.COMPACT};
+        String[] details = {"Side rail, author index and series-order browsing",
+                "Authors and series with an A–Z index", "Large covers for browsing",
                 "Smaller covers with more book details"};
         for (int i = 0; i < ids.length; i++) {
             String id = ids[i];
@@ -115,7 +117,8 @@ final class AppearanceDialog {
                     iconPreview(option), option == icon, () -> listener.icon(option));
     }
     static String layoutName(String id) {
-        return LibraryPresentation.COMPACT.equals(id) ? "Compact Rows"
+        return LibraryPresentation.RAIL.equals(id) ? "Library Rail"
+                : LibraryPresentation.COMPACT.equals(id) ? "Compact Rows"
                 : LibraryPresentation.GRID.equals(id) ? "Cover Grid" : "Split Shelf";
     }
     private View iconPreview(LauncherIcons.Icon option) {
@@ -191,6 +194,15 @@ final class AppearanceDialog {
                 triangle.reset();
                 triangle.moveTo(29, 38); triangle.lineTo(29, 46); triangle.lineTo(36, 42); triangle.close();
                 canvas.drawPath(triangle, paint);
+            } else if (LibraryPresentation.RAIL.equals(kind)) {
+                rect(canvas, 4, 5, 18, 59, palette.card);
+                for (int y = 12; y < 53; y += 10) rect(canvas, 8, y, 14, y + 5, palette.ink);
+                rect(canvas, 22, 7, 60, 18, palette.card);
+                for (int y = 24; y < 56; y += 11) {
+                    rect(canvas, 22, y, 60, y + 9, palette.card);
+                    rect(canvas, 26, y + 2, 34, y + 7, palette.action);
+                    rect(canvas, 38, y + 3, 55, y + 5, palette.ink);
+                }
             } else if (LibraryPresentation.GRID.equals(kind)) {
                 for (int x = 7; x < 55; x += 27) for (int y = 7; y < 55; y += 27) {
                     rect(canvas, x, y, x + 20, y + 19, palette.card);

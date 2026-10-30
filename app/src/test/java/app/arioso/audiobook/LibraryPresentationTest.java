@@ -6,12 +6,13 @@ import static org.junit.Assert.assertNotEquals;
 import org.junit.Test;
 
 public class LibraryPresentationTest {
-    @Test public void splitIsNewDefaultWhileExplicitOlderViewsRemain() {
-        assertEquals(LibraryPresentation.SPLIT, LibraryPresentation.layout(null, false, false));
+    @Test public void railIsNewDefaultWhileExplicitOlderViewsRemain() {
+        assertEquals(LibraryPresentation.RAIL, LibraryPresentation.layout(null, false, false));
         assertEquals(LibraryPresentation.GRID, LibraryPresentation.layout(null, true, false));
         assertEquals(LibraryPresentation.COMPACT, LibraryPresentation.layout(null, true, true));
         assertEquals(LibraryPresentation.SPLIT, LibraryPresentation.layout("split", true, false));
         assertEquals(LibraryPresentation.GRID, LibraryPresentation.layout("grid", false, false));
+        assertEquals(LibraryPresentation.RAIL, LibraryPresentation.layout("rail", true, true));
     }
 
     @Test public void indexHandlesEmptyUnicodeAndSeriesWithSharedNames() {

@@ -7,11 +7,13 @@ final class LibraryPresentation {
     static final String SPLIT = "split";
     static final String GRID = "grid";
     static final String COMPACT = "compact";
+    static final String RAIL = "rail";
 
     static String layout(String saved, boolean hasLegacyChoice, boolean legacyCompact) {
-        if (SPLIT.equals(saved) || GRID.equals(saved) || COMPACT.equals(saved)) return saved;
+        if (SPLIT.equals(saved) || GRID.equals(saved) || COMPACT.equals(saved)
+                || RAIL.equals(saved)) return saved;
         if (hasLegacyChoice) return legacyCompact ? COMPACT : GRID;
-        return SPLIT;
+        return RAIL;
     }
 
     static String authorInitial(String author) {
