@@ -686,12 +686,18 @@ public final class MainActivity extends Activity {
         emptyShelfDetail = text(getString(R.string.empty_library_detail), 14);
         emptyShelfDetail.setGravity(Gravity.CENTER);
         emptyShelf.addView(emptyShelfDetail);
-        Button addFirst = button("＋  Add audio files");
-        addFirst.setBackground(control(PLUM, PLUM, PAPER));
-        addFirst.setTextColor(ON_ACTION);
+        Button addFolder = button("Choose audiobook folder");
+        addFolder.setContentDescription("Choose a folder of audiobooks on device storage");
+        addFolder.setBackground(control(PLUM, PLUM, PAPER));
+        addFolder.setTextColor(ON_ACTION);
+        addFolder.setOnClickListener(v -> pickFolder());
+        LinearLayout.LayoutParams folderPlace = new LinearLayout.LayoutParams(-1, dp(52));
+        folderPlace.topMargin = dp(12);
+        emptyShelf.addView(addFolder, folderPlace);
+        Button addFirst = button("Add individual audio files");
         addFirst.setOnClickListener(v -> pickFiles());
         LinearLayout.LayoutParams addPlace = new LinearLayout.LayoutParams(-1, dp(52));
-        addPlace.topMargin = dp(12);
+        addPlace.topMargin = dp(8);
         emptyShelf.addView(addFirst, addPlace);
         shelfArea.addView(emptyShelf, new FrameLayout.LayoutParams(-1, -1));
         shelf.setEmptyView(emptyShelf);
@@ -1251,6 +1257,7 @@ public final class MainActivity extends Activity {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+        intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, deviceStorageStart());
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         startActivityForResult(intent, PICK_AUDIO);
     }
@@ -1258,8 +1265,14 @@ public final class MainActivity extends Activity {
     private void pickFolder() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+        intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, deviceStorageStart());
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         startActivityForResult(intent, PICK_FOLDER);
+    }
+
+    private static Uri deviceStorageStart() {
+        // The storage root is a navigation starting point; Android 11+ only grants a child folder.
+        return DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", "primary:");
     }
 
     private void scanFolder(Uri tree) {

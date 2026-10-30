@@ -10,7 +10,7 @@
     <string name="repeat_ab">Repeat %1$s–%2$s</string>
     <string name="manual_chapter_default">Chapter at %1$s</string>
     <string name="empty_library_title">Your shelf is waiting</string>
-    <string name="empty_library_detail">Choose audio stored on this device to start your library.</string>
+    <string name="empty_library_detail">Choose your audiobook folder, or add individual audio files. In the picker, open the side menu to browse device storage or an SD card.</string>
     <string name="empty_view_title">Nothing in this view</string>
     <string name="empty_view_detail">Try another shelf or browsing tab.</string>
     <string name="empty_search_detail">No matches. Clear the search or try a different shelf.</string>

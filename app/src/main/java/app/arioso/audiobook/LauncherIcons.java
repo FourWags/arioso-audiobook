@@ -20,7 +20,7 @@ final class LauncherIcons {
         }
     }
     static final Icon[] ALL = {
-        new Icon("LauncherDefault", "Original Arioso", R.drawable.ic_arioso, true),
+        new Icon("LauncherDefault", "Turning page", R.mipmap.ic_arioso, true),
         new Icon("LauncherPage", "Page & sound", R.mipmap.ic_page, false),
         new Icon("LauncherArcs", "Sound arcs", R.mipmap.ic_arcs, false),
         new Icon("LauncherShiba", "Shiba headphones", R.mipmap.ic_shiba, false)

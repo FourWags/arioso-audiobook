@@ -1,0 +1,18 @@
+Arioso 0.1.0-preview.40 / version code 40 — local candidate, 2026-10-29
+
+APK: arioso-preview.apk
+SHA-256: e19cb7ff67d88ff6519e4ed00a14536cb792c0bed0c413916bb9514fcd59f949
+Package: app.arioso.audiobook
+Signer certificate SHA-256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88 (same as preview.39)
+
+Changes: Turning Page with sound is the default launcher icon, with an adaptive and monochrome variant. The pending folder-picker improvement in the working tree is also included: a folder-first empty shelf and a device-storage starting URI.
+
+Validation performed on this source/artifact:
+- Offline Gradle assembleDebug and testDebugUnitTest: pass.
+- Offline Gradle assembleRelease and lintRelease: pass; 0 errors, 25 warnings.
+- Signed APK v2/v3 verification: pass; one signer.
+- Packaged permissions: only FOREGROUND_SERVICE and FOREGROUND_SERVICE_MEDIA_PLAYBACK.
+- Commercial input audit: notices match; no unreviewed media, assets, fonts, or native libraries.
+- Isolated Android 36 emulator: preview.39 -> preview.40 in-place install passed; launcher resolved and MainActivity resumed; crash buffer empty.
+
+Limits at candidate verification: Folder navigation and launcher appearance were not checked on the user's phone. No live audiobook, Bluetooth, accessibility, performance, or battery qualification in this run. The first emulator boot failed because its saved graphics snapshot was incompatible; the no-snapshot boot passed. Public GitHub and Obtainium status require separate publication checks.
