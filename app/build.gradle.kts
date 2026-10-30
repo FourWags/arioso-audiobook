@@ -6,8 +6,8 @@ android {
         applicationId = "app.arioso.audiobook"
         minSdk = 26
         targetSdk = 36
-        versionCode = 41
-        versionName = "0.1.0-preview.41"
+        versionCode = 42
+        versionName = "0.1.0-preview.42"
         testInstrumentationRunner = providers.gradleProperty("ariosoTestRunner")
             .getOrElse("app.arioso.audiobook.BrowserSmokeInstrumentation")
     }

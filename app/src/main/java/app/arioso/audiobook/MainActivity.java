@@ -252,6 +252,7 @@ public final class MainActivity extends Activity {
     private TextView emptyShelfDetail;
     private Button jumpIndexButton;
     private LinearLayout indexBar;
+    private TextView recentBooksHeading;
     private FrameLayout playerCoverHolder;
     private View playerAccent;
     private String playerCoverUri;
@@ -688,6 +689,12 @@ public final class MainActivity extends Activity {
         jumpIndexButton.setOnClickListener(v -> jumpToAuthor());
         indexBar.addView(jumpIndexButton, new LinearLayout.LayoutParams(dp(64), dp(48)));
         libraryPanel.addView(indexBar, new LinearLayout.LayoutParams(-1, dp(48)));
+        recentBooksHeading = text("RECENT BOOKS", 11);
+        recentBooksHeading.setTypeface(null, android.graphics.Typeface.BOLD);
+        recentBooksHeading.setLetterSpacing(0.1f);
+        recentBooksHeading.setPadding(dp(2), dp(8), 0, dp(3));
+        if (android.os.Build.VERSION.SDK_INT >= 28) recentBooksHeading.setAccessibilityHeading(true);
+        libraryPanel.addView(recentBooksHeading);
         shelf = new GridView(this);
         shelf.setId(View.generateViewId());
         shelf.setFocusable(true);
@@ -1031,18 +1038,16 @@ public final class MainActivity extends Activity {
         int brandFill = ThemeCatalog.DEFAULT_ID.equals(theme.id) ? 0xffd8b48c : PLUM;
         brand.setTextColor(ThemeCatalog.DEFAULT_ID.equals(theme.id) ? 0xff211b15 : ON_ACTION);
         brand.setBackground(control(brandFill, brandFill, PAPER));
-        brand.setContentDescription("Arioso home");
-        brand.setFocusable(true);
-        brand.setOnClickListener(v -> navigateRailHome());
+        brand.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         LinearLayout.LayoutParams brandPlace = new LinearLayout.LayoutParams(dp(46), dp(46));
         brandPlace.bottomMargin = dp(20);
         rail.addView(brand, brandPlace);
-        railHomeButton = railItem(android.R.drawable.ic_menu_view, "Home", this::navigateRailHome);
+        railHomeButton = railItem(R.drawable.rail_home, "Home · recent books", this::navigateRailHome);
         rail.addView(railHomeButton, railPlace());
         railTabButtons = new View[3];
         String[] names = {"Authors", "Series", "Books"};
-        int[] icons = {android.R.drawable.ic_menu_myplaces,
-                android.R.drawable.ic_menu_sort_by_size, android.R.drawable.ic_menu_agenda};
+        int[] icons = {R.drawable.rail_authors,
+                R.drawable.rail_series, R.drawable.rail_books};
         for (int i = 0; i < railTabButtons.length; i++) {
             final int tab = i;
             railTabButtons[i] = railItem(icons[i], names[i], () -> {
@@ -1055,10 +1060,10 @@ public final class MainActivity extends Activity {
             });
             rail.addView(railTabButtons[i], railPlace());
         }
-        rail.addView(railItem(android.R.drawable.ic_menu_recent_history,
+        rail.addView(railItem(R.drawable.rail_history,
                 "Listening history", this::showListeningHistory), railPlace());
         rail.addView(new View(this), new LinearLayout.LayoutParams(1, 0, 1));
-        rail.addView(railItem(android.R.drawable.ic_menu_preferences,
+        rail.addView(railItem(R.drawable.rail_appearance,
                 "Appearance and settings", () -> showAppearance("home", 0)), railPlace());
         return rail;
     }
@@ -1066,6 +1071,7 @@ public final class MainActivity extends Activity {
     private FrameLayout railItem(int icon, String label, Runnable action) {
         FrameLayout target = new FrameLayout(this);
         target.setContentDescription(label);
+        target.setTooltipText(label);
         target.setFocusable(true);
         target.setClickable(true);
         target.setMinimumHeight(dp(52));
@@ -1087,7 +1093,7 @@ public final class MainActivity extends Activity {
 
     private void navigateRailHome() {
         railHomeSelected = true;
-        libraryTab = 0;
+        libraryTab = 2;
         selectedAuthor = null;
         selectedSeries = null;
         selectedShelf = "All books";
@@ -3545,6 +3551,10 @@ public final class MainActivity extends Activity {
                 metadata(b, "authorSort", metadata(b, "author", UNKNOWN_AUTHOR)),
                 metadata(b, "series", STANDALONE),
                 metadata(b, "seriesNumber", ""), bookTitle(b), b.optString("uri")));
+        boolean home = railHomeSelected && railEnabled;
+        if (home) ordered.sort((a, b) -> Long.compare(
+                Math.max(b.optLong("lastPlayedAt"), b.optLong("importedAt")),
+                Math.max(a.optLong("lastPlayedAt"), a.optLong("importedAt"))));
         shelfItems.clear();
         String query = search.getText().toString().trim().toLowerCase(Locale.ROOT);
         Map<String, ShelfItem> groups = new LinkedHashMap<>();
@@ -3651,6 +3661,7 @@ public final class MainActivity extends Activity {
             entry.subtitle = entry.parts.size() + (entry.parts.size() == 1 ? " part" : " parts")
                     + " · " + entry.author;
         }
+        if (home) shelfItems.sort((a, b) -> Long.compare(recentActivity(b), recentActivity(a)));
         for (int i = 0; i < tabButtons.length; i++) {
             if (indexedLibraryLayout()) {
                 tabButtons[i].setBackground(control(i == libraryTab ? PAPER : STONE,
@@ -3672,9 +3683,17 @@ public final class MainActivity extends Activity {
         shelfFilter.setText("Shelf: " + selectedShelf);
         scopeButton.setVisibility(scoped ? View.VISIBLE : View.GONE);
         indexBar.setVisibility(indexedLibraryLayout()
-                && libraryTab == 0 && selectedAuthor == null ? View.VISIBLE : View.GONE);
+                && libraryTab == 0 && !home && selectedAuthor == null ? View.VISIBLE : View.GONE);
+        recentBooksHeading.setVisibility(home && !shelfItems.isEmpty() ? View.VISIBLE : View.GONE);
         if (scoped) scopeButton.setText(selectedSeries == null ? "← All authors" : "← " + selectedAuthor + " series");
         shelfAdapter.notifyDataSetChanged();
+    }
+
+    private long recentActivity(ShelfItem entry) {
+        long latest = 0;
+        for (JSONObject book : entry.covers) latest = Math.max(latest,
+                Math.max(book.optLong("lastPlayedAt"), book.optLong("importedAt")));
+        return latest;
     }
 
     private void renderContinueListening() {
@@ -3842,7 +3861,7 @@ public final class MainActivity extends Activity {
                 if (android.os.Build.VERSION.SDK_INT >= 28) letter.setAccessibilityHeading(true);
                 item.addView(letter);
             }
-        } else if (libraryTab == 2) {
+        } else if (libraryTab == 2 && !(railHomeSelected && railEnabled)) {
             String section = LibraryPresentation.bookSection(entry.author, entry.series);
             String previous = position == 0 ? null : LibraryPresentation.bookSection(
                     shelfItems.get(position - 1).author, shelfItems.get(position - 1).series);
