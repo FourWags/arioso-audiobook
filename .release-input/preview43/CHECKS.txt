@@ -1,0 +1,25 @@
+Arioso 0.1.0-preview.43 / version code 43 — Direct Standalone Books preview
+2026-10-30. Signed personal Preview candidate.
+
+Identity
+- Android package: app.arioso.audiobook; min SDK 26; target SDK 36.
+- Signed APK SHA-256: aba1870057499f6ee5790aba10f6abec48dd3f58f3180a7ef1d3e211362b111e.
+- Dedicated signer certificate SHA-256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88, unchanged from preview.42.
+- APK v2/v3 signature verification passed with one RSA-4096 signer.
+
+Scope and privacy
+- An author page now lists standalone titles as directly openable book rows beside real series cards, removing the Standalone-group step. It shows a scoped count and keeps Authors highlighted in the rail.
+- Real series still open their books in series order. Global Series/Books, mini-player, and saved layout choices remain.
+- The compact rail falls back to the established tab navigation when font scale is at least 1.6, width is below 360 dp, or height is below 600 dp.
+- No networking or new permissions. Packaged permission gate passed: only foreground-service and foreground-service-media-playback. Commercial packaging audit passed: notices match; no bundled audio, covers, fonts or native libraries.
+
+Checks on this source and artifact
+- Offline Gradle --rerun-tasks testDebugUnitTest, assembleDebug, assembleDebugAndroidTest, assembleRelease and lintRelease passed: 116 tasks executed, 60 unit tests, zero failures and skips.
+- Release lint: zero errors, 25 warnings. Count matches preview.42; individual warning lineage was not re-proven.
+- Android 36 disposable emulator QA with three synthetic books: Home recency, alphabetical Authors, direct standalone opening from the author page, separate real-series navigation, scoped count, and selected rail icon passed. Synthetic data was removed afterward.
+- Exact signed Preview.43 APK upgraded installed Preview.42 on the emulator. Version 43 launched with a running process; the emulator crash buffer had no Arioso crash entry.
+- The user's phone app was not changed during release preparation; its current installed version was not rechecked.
+
+Limits
+- No personal audiobook, library data, phone release upgrade, live TalkBack/Switch Access, Bluetooth, Android Auto, long playback, or battery/performance qualification for this candidate.
+- Emulator checks do not establish production or Google Play readiness. GitHub/Obtainium verification is recorded separately after publication.
