@@ -525,6 +525,12 @@ public final class MainActivity extends Activity {
         libraryHeading.setPadding(0, 0, 0, 0);
         if (android.os.Build.VERSION.SDK_INT >= 28) libraryHeading.setAccessibilityHeading(true);
         if (!shortLandscape) top.addView(libraryHeading);
+        View libraryAccent = new View(this);
+        libraryAccent.setBackgroundColor(theme.outline);
+        LinearLayout.LayoutParams libraryAccentPlace = new LinearLayout.LayoutParams(dp(72), dp(3));
+        libraryAccentPlace.topMargin = dp(2);
+        libraryAccentPlace.bottomMargin = dp(5);
+        if (!shortLandscape) top.addView(libraryAccent, libraryAccentPlace);
         libraryCount = text("Your books stay on this device", extraLargeText ? 11 : 12);
         libraryCount.setPadding(0, 0, 0, dp(2));
         if (!shortLandscape) top.addView(libraryCount);
@@ -812,7 +818,7 @@ public final class MainActivity extends Activity {
         coverPlace.topMargin = dp(8);
         playerCard.addView(playerCoverHolder, coverPlace);
         title = text("No audio selected", 22);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
+        title.setTypeface(android.graphics.Typeface.create("serif", android.graphics.Typeface.BOLD));
         title.setGravity(Gravity.CENTER);
         title.setPadding(0, dp(9), 0, 0);
         playerCard.addView(title);
@@ -1063,6 +1069,8 @@ public final class MainActivity extends Activity {
         rail.addView(railItem(R.drawable.rail_history,
                 "Listening history", this::showListeningHistory), railPlace());
         rail.addView(new View(this), new LinearLayout.LayoutParams(1, 0, 1));
+        rail.addView(railItem(R.drawable.rail_add,
+                "Add audiobooks", this::pickFolder), railPlace());
         rail.addView(railItem(R.drawable.rail_appearance,
                 "Appearance and settings", () -> showAppearance("home", 0)), railPlace());
         return rail;
@@ -1437,11 +1445,25 @@ public final class MainActivity extends Activity {
     }
 
     private void pickFolder() {
+        new AlertDialog.Builder(this).setTitle("Where are your audiobooks?")
+                .setItems(new String[]{"Browse all locations in Files", "Start at phone storage", "Choose individual audio files"},
+                        (dialog, which) -> {
+                            if (which == 2) pickFiles();
+                            else launchFolderPicker(which == 1);
+                        })
+                .setNegativeButton("Cancel", null).show();
+    }
+
+    private void launchFolderPicker(boolean startAtPhoneStorage) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-        intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, deviceStorageStart());
+        if (startAtPhoneStorage)
+            intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, deviceStorageStart());
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        startActivityForResult(intent, PICK_FOLDER);
+        try { startActivityForResult(intent, PICK_FOLDER); }
+        catch (android.content.ActivityNotFoundException e) {
+            message("No folder picker is available on this device. Try individual audio files.");
+        }
     }
 
     private static Uri deviceStorageStart() {
@@ -1508,7 +1530,10 @@ public final class MainActivity extends Activity {
                                     DocumentsContract.Document.COLUMN_MIME_TYPE,
                                     DocumentsContract.Document.COLUMN_SIZE,
                                     DocumentsContract.Document.COLUMN_LAST_MODIFIED}, null, null, null)) {
-                        if (cursor == null) continue;
+                        if (cursor == null) {
+                            failed = true;
+                            break;
+                        }
                         while (!cancel.get() && cursor.moveToNext() && found.size() < 500 && pending.size() < 1000) {
                             String id = cursor.getString(0);
                             String name = cursor.getString(1);
@@ -1551,6 +1576,7 @@ public final class MainActivity extends Activity {
                     if (folderCover != null) for (JSONObject item : folderAudio)
                         item.put("folderCoverUri", folderCover);
                 }
+                if (!cancel.get() && (!pending.isEmpty() || found.size() >= 500)) failed = true;
             } catch (RuntimeException | JSONException e) { failed = true; }
             final boolean scanFailed = failed;
             MAIN.post(() -> {
@@ -1589,6 +1615,15 @@ public final class MainActivity extends Activity {
     }
 
     private void confirmFolderImport(Uri tree, List<JSONObject> found, boolean scanFailed) {
+        if (scanFailed) {
+            releaseTreeIfUnused(tree.toString());
+            new AlertDialog.Builder(this).setTitle("Could not read this folder")
+                    .setMessage("Android could not finish reading this folder, or it exceeded the 500-file scan limit. Your library has not changed. Try another folder or add individual audio files.")
+                    .setPositiveButton("Browse again", (dialog, which) -> pickFolder())
+                    .setNeutralButton("Choose files", (dialog, which) -> pickFiles())
+                    .setNegativeButton("Close", null).show();
+            return;
+        }
         List<JSONObject> additions = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         Set<String> foundUris = new HashSet<>();
