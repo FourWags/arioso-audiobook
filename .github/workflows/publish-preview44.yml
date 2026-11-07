@@ -1,0 +1,28 @@
+name: Publish Arioso preview 44
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .release-input/preview44/**
+      - .github/workflows/publish-preview44.yml
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.repository == 'FourWags/arioso-audiobook'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild source archive from frozen manifest
+        run: python3 .release-input/preview44/make-source-zip.py
+      - name: Verify frozen release inputs
+        working-directory: .release-input/preview44
+        run: sha256sum -c SHA256SUMS
+      - name: Publish signed Preview as Latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .release-input/preview44/publish-release.py

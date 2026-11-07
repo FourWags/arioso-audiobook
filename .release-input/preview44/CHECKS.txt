@@ -1,0 +1,25 @@
+Arioso 0.1.0-preview.44 / version code 44 — Easier Folder Import preview
+2026-11-07. Signed personal Preview candidate; public publication separately verified.
+
+Identity
+- Android package: app.arioso.audiobook; min SDK 26; target SDK 36.
+- Signed APK SHA-256: a9044ef0b93cefcb87048705744b6d03b3be2a44af431c2f88ffafda780b9f7b.
+- Dedicated signer certificate SHA-256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88, unchanged from Preview.43.
+- APK v2/v3 signature verification passed with one RSA-4096 signer.
+
+Scope and privacy
+- Folder adding offers Browse all locations without a forced initial URI, Start at phone storage, or individual audio files. A visible Add audiobooks rail action opens these choices.
+- Android Files still grants access only to the user-selected folder. An incomplete or failed scan cannot apply partial additions. No original audio or existing library listing is deleted.
+- Library heading accent and player title now share the editorial visual style; existing Black & Tan first-launch theme and alternate layouts remain.
+- No networking or new permissions. Exact APK permission gate passed: only foreground-service and foreground-service-media-playback. Commercial packaging audit passed: notices match; no bundled audio, covers, fonts or native libraries.
+
+Checks on this source and artifact
+- Offline Gradle --rerun-tasks testDebugUnitTest, assembleDebug, assembleDebugAndroidTest, assembleRelease, lintRelease passed: 116 tasks executed, 60 unit tests. Lint: zero errors, 25 warnings. Count matches Preview.43; individual warning lineage was not re-proven. The Gradle lintVital report tasks were skipped; lintRelease completed.
+- Disposable Android 36 emulator: clean QA build showed all three folder choices; Browse all locations opened Android Files at the device storage root, with Audiobooks visible; selected Audiobooks/AriosoQA and approved folder access; preview showed one synthetic M4A; Apply created one listing. QA data was cleared and the synthetic file removed afterward.
+- Exact signed Preview.44 APK upgraded installed signed Preview.43 on the same disposable emulator. Package versionCode 44 and versionName 0.1.0-preview.44 were read from package manager. App launched with a running process; no Arioso crash appeared in the emulator crash buffer. The signed candidate's rail Add audiobooks action opened the three choices, Browse all locations reached the Audiobooks folder, and a second synthetic M4A import preview and Apply created one listing. Synthetic app data and file were removed after verification.
+- The user's phone app was not changed during release preparation; its installed version was not rechecked.
+
+Limits
+- The actual Pixel Downloads-only folder problem has not been retested on the phone. Provider failure/limit paths were reviewed and guarded but not exercised against a failing physical provider.
+- No personal audiobook, library data, phone upgrade, live TalkBack/Switch Access, Bluetooth, Android Auto, long playback, or battery/performance qualification for this candidate.
+- Emulator checks do not establish production or Google Play readiness. GitHub Latest and public asset checks are recorded separately after publication.
