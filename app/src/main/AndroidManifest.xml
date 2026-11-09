@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
     <queries>
         <package android:name="app.petallibrary" />
+        <package android:name="com.google.android.projection.gearhead" />
+        <package android:name="com.google.android.googlequicksearchbox" />
+        <package android:name="com.google.android.carassistant" />
+        <package android:name="com.google.android.gms" />
         <provider android:authorities="app.petallibrary.localsync" />
     </queries>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

@@ -10,6 +10,12 @@ Arioso is an offline Android audiobook player for audio files you select on your
 - Link a local companion PDF or cover, organize a listen-next queue, use private listening history, and optionally enable local statistics. These features store data on the device.
 - Import individual audio files or scan a local folder with Android's document picker. Folder scans are bounded; unsupported or missing files can be reviewed and relinked without deleting the original audio.
 
+## Android Auto
+
+Turn on **Android Auto access** in Arioso's Library actions before connecting. The car browser offers Continue, Authors, Series and Books; author pages open standalone books directly and group series in reading order. Large lists are split into numbered browse groups. Car search matches local titles, authors and series, and voice play requests can resume the selected book or choose a matching one. Playback uses the same audio focus, saved position and media controls as the phone. Book import and library editing stay on the phone. The browser is off by default, and Private playback hides its library and search results. Arioso itself does not request Internet access.
+
+The media browser and transport path are covered by synthetic emulator checks. Real Android Auto display, voice recognition, steering-wheel controls, driving interruption and car-specific behavior still need a parked-car or Desktop Head Unit qualification on the exact signed build.
+
 ## Moving from an earlier install
 
 The earlier Android package and Arioso are separate apps. Export a **full metadata backup** from the earlier install, then import it through Arioso's Library backup menu. The backup contains book details and saved places, not audio. Android does not transfer file grants between packages, so use **More > Organize library > Missing files and saved access > Relink missing** to select each original file. Keep the earlier install until you have checked the new library.

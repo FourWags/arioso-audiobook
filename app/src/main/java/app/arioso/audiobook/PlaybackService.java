@@ -28,6 +28,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.provider.MediaStore;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -206,12 +207,16 @@ public final class PlaybackService extends Service {
                 CHANNEL, "Audiobook playback", NotificationManager.IMPORTANCE_LOW));
         session = new MediaSession(this, "Arioso");
         session.setCallback(new MediaSession.Callback() {
-            @Override public void onPlay() { if (uri == null) playSelectedFromCar(); else play(); }
+            @Override public void onPrepare() { if (uri == null) selectDefaultFromCar(false); }
+            @Override public void onPrepareFromMediaId(String mediaId, Bundle extras) {
+                selectMediaId(mediaId, false);
+            }
+            @Override public void onPlay() { if (uri == null) selectDefaultFromCar(true); else play(); }
             @Override public void onPlayFromMediaId(String mediaId, Bundle extras) {
-                playFromMediaId(mediaId);
+                selectMediaId(mediaId, true);
             }
             @Override public void onPlayFromSearch(String query, Bundle extras) {
-                playFromSearch(query);
+                playFromSearch(query, extras);
             }
             @Override public void onPause() { pause(); }
             @Override public void onStop() { pause(); }
@@ -443,39 +448,65 @@ public final class PlaybackService extends Service {
 
     void toggle() { if (playing) pause(); else play(); }
 
-    private void playSelectedFromCar() {
-        String selected = getSharedPreferences(PREFS, MODE_PRIVATE).getString("selected_uri", "");
-        if (selected == null || selected.isEmpty()) return;
-        playFromMediaId(CarMediaIds.book(selected));
-    }
-
-    private void playFromSearch(String query) {
-        if (query == null || query.trim().isEmpty()) { playSelectedFromCar(); return; }
-        SharedPreferences carPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        if (!carPrefs.getBoolean("auto_browse_enabled", false)
-                || carPrefs.getBoolean("private_playback", false)) return;
+    private void selectDefaultFromCar(boolean shouldPlay) {
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        String selected = prefs.getString("selected_uri", "");
+        if (selected != null && !selected.isEmpty()
+                && selectMediaId(CarMediaIds.book(selected), shouldPlay)) return;
         try {
             JSONArray saved = LibraryStore.get(this).readAll();
-            String needle = query.toLowerCase(java.util.Locale.ROOT).trim();
-            for (int i = 0; i < Math.min(saved.length(), 500); i++) {
-                JSONObject book = saved.optJSONObject(i);
-                if (book == null || book.optBoolean("archived")) continue;
-                if (book.optString("title", book.optString("name", ""))
-                        .toLowerCase(java.util.Locale.ROOT).contains(needle)) {
-                    playFromMediaId(CarMediaIds.book(book.optString("uri")));
-                    return;
-                }
+            JSONObject newest = null;
+            for (int i = 0; i < saved.length(); i++) {
+                JSONObject item = saved.optJSONObject(i);
+                if (item == null || item.optBoolean("archived")) continue;
+                Uri document = Uri.parse(item.optString("uri"));
+                if (!LocalDocumentPolicy.accepts(document.getScheme(), document.getAuthority())) continue;
+                if (newest == null || item.optLong("lastPlayedAt") > newest.optLong("lastPlayedAt"))
+                    newest = item;
             }
+            if (newest != null) selectMediaId(CarMediaIds.book(newest.optString("uri")), shouldPlay);
         } catch (RuntimeException ignored) { }
     }
 
-    private void playFromMediaId(String mediaId) {
+    private void playFromSearch(String query, Bundle extras) {
         SharedPreferences carPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         if (!carPrefs.getBoolean("auto_browse_enabled", false)
                 || carPrefs.getBoolean("private_playback", false)) return;
+        if ((query == null || query.trim().isEmpty()) && extras != null)
+            query = extras.getString(MediaStore.EXTRA_MEDIA_TITLE,
+                    extras.getString(MediaStore.EXTRA_MEDIA_ARTIST,
+                            extras.getString(MediaStore.EXTRA_MEDIA_ALBUM, "")));
+        if (query == null || query.trim().isEmpty()) { selectDefaultFromCar(true); return; }
+        if (query.length() > 128) return;
         try {
             JSONArray saved = LibraryStore.get(this).readAll();
-            for (int i = 0; i < Math.min(saved.length(), 500); i++) {
+            JSONObject best = null;
+            int bestScore = 0;
+            for (int i = 0; i < saved.length(); i++) {
+                JSONObject book = saved.optJSONObject(i);
+                if (book == null || book.optBoolean("archived")) continue;
+                Uri document = Uri.parse(book.optString("uri"));
+                if (!LocalDocumentPolicy.accepts(document.getScheme(), document.getAuthority())) continue;
+                int score = CarSearch.score(query, book.optString("title", book.optString("name")),
+                        book.optString("author"), book.optString("series"));
+                if (score > bestScore || (score > 0 && score == bestScore && best != null
+                        && book.optLong("lastPlayedAt") > best.optLong("lastPlayedAt"))) {
+                    best = book;
+                    bestScore = score;
+                }
+            }
+            if (best != null) selectMediaId(CarMediaIds.book(best.optString("uri")), true);
+        } catch (RuntimeException ignored) { }
+    }
+
+    private boolean selectMediaId(String mediaId, boolean shouldPlay) {
+        if (mediaId == null || !mediaId.startsWith("book:")) return false;
+        SharedPreferences carPrefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        if (!carPrefs.getBoolean("auto_browse_enabled", false)
+                || carPrefs.getBoolean("private_playback", false)) return false;
+        try {
+            JSONArray saved = LibraryStore.get(this).readAll();
+            for (int i = 0; i < saved.length(); i++) {
                 JSONObject book = saved.optJSONObject(i);
                 if (book == null || book.optBoolean("archived")) continue;
                 String selected = book.optString("uri");
@@ -483,18 +514,19 @@ public final class PlaybackService extends Service {
                         || !LocalDocumentPolicy.accepts(Uri.parse(selected).getScheme(),
                         Uri.parse(selected).getAuthority())) continue;
                 if (!getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                        .putString("selected_uri", selected).commit()) return;
+                        .putString("selected_uri", selected).commit()) return false;
                 setSpeed((float) book.optDouble("playbackSpeed", 1.0));
                 setPitch((float) book.optDouble("playbackPitch", 1.0));
                 setVoiceBoost(book.optBoolean("voiceBoost", false));
                 setSkipSilence(book.optBoolean("skipSilence", false));
-                if (selected.equals(uri) && ready) play();
+                if (selected.equals(uri) && ready) { if (shouldPlay) play(); }
                 else loadInternal(selected, book.optString("title", book.optString("name", "Book")),
                         book.optString("author", ""), book.optInt("position"),
-                        book.optBoolean("finished"), true, true);
-                return;
+                        book.optBoolean("finished"), shouldPlay, true);
+                return true;
             }
         } catch (RuntimeException ignored) { }
+        return false;
     }
 
     void play() {
@@ -933,18 +965,26 @@ public final class PlaybackService extends Service {
 
     private void publishState() {
         if (session == null) return;
-        session.setMetadata(new MediaMetadata.Builder()
+        MediaMetadata.Builder metadata = new MediaMetadata.Builder()
                 .putString(MediaMetadata.METADATA_KEY_TITLE, PlaybackDisplay.title(privatePlayback, title))
                 .putString(MediaMetadata.METADATA_KEY_ARTIST, PlaybackDisplay.artist(privatePlayback, author))
-                .putLong(MediaMetadata.METADATA_KEY_DURATION, duration).build());
+                .putLong(MediaMetadata.METADATA_KEY_DURATION, duration);
+        if (uri != null && !privatePlayback)
+            metadata.putString(MediaMetadata.METADATA_KEY_MEDIA_ID, CarMediaIds.book(uri));
+        session.setMetadata(metadata.build());
         int state = unavailable ? PlaybackState.STATE_ERROR : playing ? PlaybackState.STATE_PLAYING
-                : ready ? PlaybackState.STATE_PAUSED : PlaybackState.STATE_CONNECTING;
+                : ready ? PlaybackState.STATE_PAUSED : uri == null
+                ? PlaybackState.STATE_STOPPED : PlaybackState.STATE_CONNECTING;
         long actions = PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_PLAY_PAUSE
                 | PlaybackState.ACTION_SEEK_TO | PlaybackState.ACTION_REWIND
                 | PlaybackState.ACTION_FAST_FORWARD | PlaybackState.ACTION_STOP
-                | PlaybackState.ACTION_PLAY_FROM_MEDIA_ID;
-        session.setPlaybackState(new PlaybackState.Builder()
-                .setActions(actions).setState(state, position(), playing ? speed : 0f).build());
+                | PlaybackState.ACTION_PLAY_FROM_MEDIA_ID | PlaybackState.ACTION_PLAY_FROM_SEARCH
+                | PlaybackState.ACTION_PREPARE | PlaybackState.ACTION_PREPARE_FROM_MEDIA_ID;
+        PlaybackState.Builder playbackState = new PlaybackState.Builder()
+                .setActions(actions).setState(state, position(), playing ? speed : 0f);
+        if (unavailable) playbackState.setErrorMessage(
+                "Audio file unavailable. Relink it in Arioso on your phone.");
+        session.setPlaybackState(playbackState.build());
         if (playing) startForeground(NOTIFICATION_ID, notification());
         AriosoWidget.update(this, title, playing, privatePlayback);
         notifyListener();

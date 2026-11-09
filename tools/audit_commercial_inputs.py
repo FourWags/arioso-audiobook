@@ -7,6 +7,7 @@ This is a packaging check, not proof of copyright ownership or legal clearance.
 import sys
 import zipfile
 import re
+import hashlib
 from pathlib import Path
 
 
@@ -15,10 +16,30 @@ NOTICES = {
     "assets/licenses/arioso-mit.txt": PROJECT / "LICENSE",
     "assets/licenses/components.txt": PROJECT / "app/src/main/assets/licenses/components.txt",
     "assets/licenses/privacy.txt": PROJECT / "app/src/main/assets/licenses/privacy.txt",
+    "assets/licenses/androidx-apache.txt": PROJECT / "app/src/main/assets/licenses/androidx-apache.txt",
 }
 MEDIA_SUFFIXES = (".mp3", ".m4a", ".m4b", ".wav", ".flac", ".ogg",
                   ".opus", ".aac", ".mp4", ".jpg", ".jpeg", ".png",
                   ".webp", ".gif", ".ttf", ".otf")
+# Compiled AndroidX Core 1.9.0 notification PNGs. Release resource shrinking
+# renames their paths, so their reviewed bytes are pinned as well as debug names.
+ANDROIDX_NOTIFICATION_SHA256 = {
+    "21f0b55280be10b187ceff8edef4a5a7047683e6e9fcf47de410aa3839f41094",
+    "42aee0b03883e94df5e543348a397d1302c1b8221895871a83b81899f5a9647b",
+    "0c6328c7b2420570a7ec38b3beb3bac9a29d895ac1ab7239315aba7266418593",
+    "18b328d8017e677d5aad3dbd66bae356b5cac978c6f0670938ea648e51d0eb66",
+    "8430ec003e003f3f2ba2f78d48fd150e25407667e530e82e87a7d4841c0fd676",
+    "2f7fbda0ba6e53e9a47e2fc0e24e32c447c613a5808c2d6285dc651e83a07ad7",
+    "e17761ed280edd93d7141bd504b70f9e9e15a8652288d9e6333bf4ce964ef844",
+    "a8676a1793ac8310ffb12986232df66df092d29c242aeedc2b73556c010d38dc",
+    "99c14d6855b8be296d58017d3751b8dc849c47b6d1d80ab614ff9075080e461b",
+    "0d773e62c756422313262846c787e58f67e0ee87e45e1ae9942002e816c4cb9e",
+    "3e09afa21c45372c035598c017c8fb405a6d678e6cb84dc857581cb3b40e482d",
+    "20343222f9f79dd565c3a2248494d452e70820ac1c437173c38badd45f962afd",
+    "559bf783d765c02338e97952bdc9c6689c7ff99090b8c9813369118da8b080f0",
+    "d27af435101ca4cbec0c840bd30687918cd39eb83aab1487420855623a45998b",
+    "b44eeda34d7a529c2fe55719eb098fa29707caa91d18de06a7a775d6e6bcf973",
+}
 
 
 def privacy_dialog_text() -> bytes:
@@ -63,7 +84,10 @@ def main() -> int:
             native = [name for name in names if name.startswith(prefix + "lib/") and not name.endswith("/")]
             if native:
                 failures.append(f"Unreviewed native libraries: {native}")
-            media = [name for name in names if name.lower().endswith(MEDIA_SUFFIXES)]
+            media = [name for name in names if name.lower().endswith(MEDIA_SUFFIXES)
+                     and not (name.endswith(".png")
+                              and hashlib.sha256(archive.read(name)).hexdigest()
+                              in ANDROIDX_NOTIFICATION_SHA256)]
             if media:
                 failures.append(f"Unreviewed media or font files: {media}")
             if failures:

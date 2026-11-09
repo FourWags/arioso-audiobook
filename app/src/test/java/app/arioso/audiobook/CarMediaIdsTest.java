@@ -13,4 +13,13 @@ public class CarMediaIdsTest {
         assertEquals(69, first.length());
         assertFalse(first.contains("Books"));
     }
+
+    @Test public void groupIdsDoNotExposeAuthorsOrSeries() {
+        String author = CarMediaIds.group("author", "Private Author");
+        String series = CarMediaIds.group("series", "Private Author\u0000Secret Saga");
+        assertEquals(author, CarMediaIds.group("author", "Private Author"));
+        assertNotEquals(author, series);
+        assertFalse(author.contains("Private"));
+        assertFalse(series.contains("Secret"));
+    }
 }

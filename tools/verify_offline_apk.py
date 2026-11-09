@@ -3,6 +3,7 @@
 
 import os
 import shutil
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -45,13 +46,30 @@ def main() -> int:
         print(f"Could not inspect APK permissions: {exc}", file=sys.stderr)
         return 2
     found = output.splitlines()
-    if (len(found) != len(EXPECTED_PERMISSIONS) + 1
-            or found[0] not in ALLOWED_PACKAGES
-            or set(found[1:]) != EXPECTED_PERMISSIONS):
+    package = found[0] if found else ""
+    signature_permission = package.removeprefix("package: ") + ".DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    pair = {f"permission: {signature_permission}",
+            f"uses-permission: name='{signature_permission}'"}
+    actual = set(found[1:])
+    extra = actual - EXPECTED_PERMISSIONS
+    valid_extra = not extra or extra == pair
+    if (package not in ALLOWED_PACKAGES or len(found) != len(actual) + 1
+            or not EXPECTED_PERMISSIONS.issubset(actual) or not valid_extra):
         print("Offline permission gate failed:", file=sys.stderr)
         print(output, file=sys.stderr)
         return 1
-    print("Offline permission gate passed: only media foreground service permissions")
+    if extra:
+        manifest = subprocess.check_output([find_aapt(), "dump", "xmltree", sys.argv[1],
+                                             "AndroidManifest.xml"], text=True)
+        declaration = re.search(r'E: permission[^\n]*\n\s*A: android:name[^\n]*"'
+                                + re.escape(signature_permission)
+                                + r'"[^\n]*\n\s*A: android:protectionLevel[^\n]*0x2\b',
+                                manifest)
+        if declaration is None:
+            print("Dynamic receiver permission is not signature-protected", file=sys.stderr)
+            return 1
+    print("Offline permission gate passed: media foreground service permissions"
+          + (" and app-owned signature receiver permission" if extra else ""))
     return 0
 
 

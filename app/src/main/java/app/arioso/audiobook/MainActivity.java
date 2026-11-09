@@ -1329,11 +1329,15 @@ public final class MainActivity extends Activity {
     private void showAboutAndLicenses() {
         new AlertDialog.Builder(this).setTitle("About & licenses")
                 .setItems(new String[]{"Arioso code and icon · MIT License",
-                        "Components and content rights", "Privacy policy"}, (dialog, which) ->
+                        "Components and content rights", "AndroidX libraries · Apache 2.0",
+                        "Privacy policy"}, (dialog, which) ->
                         showLicenseAsset(which == 0 ? "licenses/arioso-mit.txt"
-                                        : which == 1 ? "licenses/components.txt" : "licenses/privacy.txt",
+                                        : which == 1 ? "licenses/components.txt"
+                                        : which == 2 ? "licenses/androidx-apache.txt"
+                                        : "licenses/privacy.txt",
                                 which == 0 ? "MIT License"
-                                        : which == 1 ? "Components and content rights" : "Privacy policy"))
+                                        : which == 1 ? "Components and content rights"
+                                        : which == 2 ? "Apache License 2.0" : "Privacy policy"))
                 .setNegativeButton("Close", null).show();
     }
 
@@ -1839,9 +1843,10 @@ public final class MainActivity extends Activity {
     private void configureAndroidAuto() {
         boolean enabled = prefs.getBoolean("auto_browse_enabled", false);
         new AlertDialog.Builder(this).setTitle("Android Auto access")
-                .setMessage("Allow Android Auto on this phone to browse local book titles"
-                        + " and control playback? This shares titles with the car display."
-                        + " Private playback hides the library. No network access is added to Arioso.")
+                .setMessage("Allow Android Auto and its voice assistant to browse local book"
+                        + " titles and authors, search your library, and control playback?"
+                        + " Car system apps may receive that information. Private playback"
+                        + " hides the library. Arioso stays offline.")
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton(enabled ? "Turn off" : "Turn on", (dialog, which) -> {
                     if (!prefs.edit().putBoolean("auto_browse_enabled", !enabled).commit())
