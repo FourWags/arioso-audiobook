@@ -2,7 +2,7 @@
 
 Status: **not cleared for sale or Google Play production**. The current candidate is `0.1.0-preview.46` (version code 46), intended as a GitHub personal preview for Android Auto testing. This document is a release checklist, not a legal opinion. Its evidence is version-specific; a later source edit needs a new build and checks before distribution.
 
-Preview.45 was published as GitHub Latest and its ten public assets were hash verified. Preview.46 adds the Android Auto library, search and transport updates. Publication, phone and car-display evidence for Preview.46 must be recorded separately. The current local Play bundle is based on Preview.45; a later Play bundle needs a fresh build. Play-generated delivery remains untested.
+Preview.46 is published as GitHub Latest for personal testing. Its ten public assets, including the APK fetched through the Latest download URL, matched the verified local SHA-256 values. The tested source tree is `0140ca761bb0eb288d18e2563e8893c518b145c7`; the release is [v0.1.0-preview.46](https://github.com/FourWags/arioso-audiobook/releases/tag/v0.1.0-preview.46). The phone and car-display tests remain separate gates. The current local Play bundle is based on Preview.45; a later Play bundle needs a fresh build. Play-generated delivery remains untested.
 
 ## Product and rights
 
