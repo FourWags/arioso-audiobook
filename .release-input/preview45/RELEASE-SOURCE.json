@@ -1,0 +1,14 @@
+{
+  "localSourceCommit": "c282c01909d340d6bb9ff3bc3d343963c6055550",
+  "publishedSourceCommit": "2c0dc7d06845cf5ead13345c2d4086f66bd06ae4",
+  "repository": "FourWags/arioso-audiobook",
+  "sourceArchive": "arioso-source.zip",
+  "sourceArchiveSha256": "22de90093e870781e833381f7023c186d2c083f12bc26cae9d525d23d165030c",
+  "sourceTreeSha": "84c27ac1c888b1d8c648f56cfd7249aa65f9eab0",
+  "testedCandidate": {
+    "apkSha256": "be78a629446b8db15dfcf5eb4eda10e621fdba0c6f4bc126c31f9d9b431bdef7",
+    "package": "app.arioso.audiobook",
+    "signerSha256": "d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88",
+    "versionCode": 45
+  }
+}
