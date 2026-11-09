@@ -752,8 +752,11 @@ public final class MainActivity extends Activity {
         LinearLayout.LayoutParams addPlace = new LinearLayout.LayoutParams(-1, dp(52));
         addPlace.topMargin = dp(8);
         emptyShelf.addView(addFirst, addPlace);
-        shelfArea.addView(emptyShelf, new FrameLayout.LayoutParams(-1, -1));
-        shelf.setEmptyView(emptyShelf);
+        ScrollView emptyScroll = new ScrollView(this);
+        emptyScroll.setFillViewport(true);
+        emptyScroll.addView(emptyShelf);
+        shelfArea.addView(emptyScroll, new FrameLayout.LayoutParams(-1, -1));
+        shelf.setEmptyView(emptyScroll);
         libraryPanel.addView(shelfArea, new LinearLayout.LayoutParams(-1, 0, 1));
         miniPlayer = new LinearLayout(this);
         miniPlayer.setGravity(Gravity.CENTER_VERTICAL);

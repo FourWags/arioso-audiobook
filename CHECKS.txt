@@ -1,25 +1,25 @@
-Arioso 0.1.0-preview.44 / version code 44 — Easier Folder Import preview
-2026-11-07. Signed personal Preview candidate; public publication separately verified.
+Arioso 0.1.0-preview.45 / version code 45 — Large Text Library Access preview
+2026-11-08. Signed personal Preview candidate; public publication is a separate gate.
 
 Identity
 - Android package: app.arioso.audiobook; min SDK 26; target SDK 36.
-- Signed APK SHA-256: a9044ef0b93cefcb87048705744b6d03b3be2a44af431c2f88ffafda780b9f7b.
-- Dedicated signer certificate SHA-256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88, unchanged from Preview.43.
+- Signed APK SHA-256: be78a629446b8db15dfcf5eb4eda10e621fdba0c6f4bc126c31f9d9b431bdef7.
+- Dedicated signer certificate SHA-256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88, unchanged from Preview.44.
 - APK v2/v3 signature verification passed with one RSA-4096 signer.
 
 Scope and privacy
-- Folder adding offers Browse all locations without a forced initial URI, Start at phone storage, or individual audio files. A visible Add audiobooks rail action opens these choices.
-- Android Files still grants access only to the user-selected folder. An incomplete or failed scan cannot apply partial additions. No original audio or existing library listing is deleted.
-- Library heading accent and player title now share the editorial visual style; existing Black & Tan first-launch theme and alternate layouts remain.
-- No networking or new permissions. Exact APK permission gate passed: only foreground-service and foreground-service-media-playback. Commercial packaging audit passed: notices match; no bundled audio, covers, fonts or native libraries.
+- At 200% system text, the empty library scrolls to keep folder and individual-file actions reachable. Directions are shorter.
+- Preview.44 folder choices and Preview.43 direct standalone-book navigation remain.
+- No networking or new permissions. Exact signed APK permission gate passed: only foreground-service and foreground-service-media-playback. Commercial packaging audit passed: notices match; no bundled audio, covers, fonts or native libraries.
 
 Checks on this source and artifact
-- Offline Gradle --rerun-tasks testDebugUnitTest, assembleDebug, assembleDebugAndroidTest, assembleRelease, lintRelease passed: 116 tasks executed, 60 unit tests. Lint: zero errors, 25 warnings. Count matches Preview.43; individual warning lineage was not re-proven. The Gradle lintVital report tasks were skipped; lintRelease completed.
-- Disposable Android 36 emulator: clean QA build showed all three folder choices; Browse all locations opened Android Files at the device storage root, with Audiobooks visible; selected Audiobooks/AriosoQA and approved folder access; preview showed one synthetic M4A; Apply created one listing. QA data was cleared and the synthetic file removed afterward.
-- Exact signed Preview.44 APK upgraded installed signed Preview.43 on the same disposable emulator. Package versionCode 44 and versionName 0.1.0-preview.44 were read from package manager. App launched with a running process; no Arioso crash appeared in the emulator crash buffer. The signed candidate's rail Add audiobooks action opened the three choices, Browse all locations reached the Audiobooks folder, and a second synthetic M4A import preview and Apply created one listing. Synthetic app data and file were removed after verification.
-- The user's phone app was not changed during release preparation; its installed version was not rechecked.
+- Offline Gradle --rerun-tasks testDebugUnitTest, assembleDebug, assembleDebugAndroidTest, assembleRelease, lintRelease passed: 116 executed tasks, 60 unit tests, 0 failures or skips. Release lint: zero errors, 25 warnings. lintVital report tasks were skipped; lintRelease completed. The 25 warnings were classified in Work/qa/play-prep/LINT-TRIAGE.txt; no new warning category was observed.
+- Disposable Android 36 emulator: exact signed Preview.44 upgraded in place to signed Preview.45; versionCode 45 and versionName 0.1.0-preview.45 were read from package manager. At font_scale 2.0, the signed candidate's empty library scrolled and both adding-book actions appeared in the accessibility tree. No Arioso FATAL EXCEPTION appeared in the scoped emulator crash buffer.
+- On the source-equivalent debug QA build, synthetic startup/recreation retained a book's speed, position and note. Rail Home, author, direct standalone and series navigation passed at font_scale 1.0. The rail is intentionally disabled above 1.6 text scale. See Work/qa/play-prep/INSTRUMENTATION.txt.
+- Preview.44 signed build reproduced the 200% text clipping; the fix and signed Preview.45 result are recorded in Work/qa/play-prep/LARGE-TEXT.txt and Work/qa/large-text45/.
 
 Limits
-- The actual Pixel Downloads-only folder problem has not been retested on the phone. Provider failure/limit paths were reviewed and guarded but not exercised against a failing physical provider.
-- No personal audiobook, library data, phone upgrade, live TalkBack/Switch Access, Bluetooth, Android Auto, long playback, or battery/performance qualification for this candidate.
-- Emulator checks do not establish production or Google Play readiness. GitHub Latest and public asset checks are recorded separately after publication.
+- The Pixel was read-only checked at Preview.43 but was not updated during release preparation. Its reported Downloads-only folder-picker problem and Obtainium upgrade remain pending; the user was actively using the phone.
+- No personal audiobook, library data, phone upgrade, live TalkBack/Switch Access, Bluetooth, Android Auto, long playback, or physical battery/performance qualification for this candidate.
+- The signed local Play bundle prepared earlier is based on Preview.44, not this fix. No Play Console/production or sale qualification.
+- GitHub Latest and public-asset verification must be recorded separately after publication.
