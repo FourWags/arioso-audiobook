@@ -1,6 +1,6 @@
 # Arioso Google Play listing draft
 
-Prepared 2026-11-08 from Preview.44. Keep this as a draft until the exact Play candidate, screenshots, support contact, pricing, name clearance, and production test gates are approved. Arioso includes no books. The local signed AAB does not contain the unreleased large-text fix.
+Prepared 2026-11-08 from Preview.45. Keep this as a draft until the exact Play candidate, screenshots, support contact, pricing, name clearance, and production test gates are approved. Arioso includes no books. The locally signed AAB contains the Preview.45 large-text fix; it has not been submitted to Play.
 
 ## App details
 
