@@ -1,0 +1,9 @@
+# Arioso 0.1.0-preview.46 — Android Auto Library
+
+Android Auto can now browse Continue, Authors, Series and Books after you turn on Android Auto access in Arioso. Author pages open standalone books directly and group series in reading order. Large lists use bounded browse groups. Car search matches local titles, authors and series; voice play requests can resume or select a match. The player reports a stopped initial state, supports prepare and search commands, and gives a relink message when a file is unavailable. Car items use opaque IDs, and Private playback hides browsing and search.
+
+Arioso remains offline and does not include audiobooks. AndroidX Media and its reviewed support libraries are included under Apache 2.0 with an in-app license. The only permission change is an app-owned, signature-protected dynamic receiver permission supplied by AndroidX; there is no Internet permission. The Android package and dedicated app-signing identity remain unchanged.
+
+This is a personal Preview distributed through GitHub Latest for Obtainium testing. Synthetic emulator checks cover the browser, opt-in/privacy gates, search, hierarchy, large-library grouping and media command routing. An actual Android Auto display, voice recognition, steering-wheel controls, car-specific interruptions, long playback, physical battery/performance, live accessibility, Google Play and commercial sale readiness remain unqualified for this build. See CHECKS.txt for exact checks and limits.
+
+See CHECKS.txt for the exact verified checks, remaining limitations and personal preview status.

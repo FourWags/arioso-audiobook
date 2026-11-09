@@ -1,0 +1,25 @@
+Arioso 0.1.0-preview.46 / version code 46 — Android Auto Library preview
+2026-11-08. Signed personal Preview candidate; public publication is a separate gate.
+
+Identity
+- Android package: app.arioso.audiobook; min SDK 26; target SDK 36.
+- Signed APK SHA-256: 1a645074d779e519d0688862627128604d5b2830b8a22ff67bcc300b70afeaf5.
+- Dedicated signer certificate SHA-256: d222ebc813ccfe3dbfe6a0aaf4869a878ea06884c4ae5151ca4334513b0f8b88, unchanged from Preview.45.
+- APK v2/v3 signature verification passed with one RSA-4096 signer.
+
+Scope and privacy
+- Opt-in car browser supports Continue, Authors, Series and Books, dynamic root-tab limits, direct standalone books, series reading order, bounded browse groups and title/author/series search. Author, series and book media IDs are opaque hashes. The media session supports voice search, prepare, resume, pause, stop, seek, rewind and fast forward. A missing file reports a relink message.
+- Disabled Android Auto access or Private playback denies new browser connections and suppresses browse/search results. The phone app discloses that trusted car system apps and Google Assistant may receive local book metadata when the user opts in.
+- Exact signed APK has no Internet permission. AndroidX Media 1.8.0 adds an app-owned DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION; the packaged declaration was verified signature-protected. Other permissions remain only media foreground service permissions. Commercial input audit passed: MIT, Apache 2.0, component and privacy notices match; no bundled audiobook, book cover, external font or native library. Reviewed AndroidX notification PNGs are byte-pinned in the audit.
+
+Checks on this source and artifact
+- Fresh offline Gradle --rerun-tasks testDebugUnitTest, assembleDebug, assembleDebugAndroidTest, assembleRelease and lintRelease passed: 116 executed tasks, 63 unit tests, zero failures/skips. Release lint: zero errors and 25 warnings (22 SetTextI18n, one each OldTargetApi, UseRequiresApi, ExportedService), the same categories as Preview.45. lintVital report tasks were skipped; lintRelease completed.
+- Disposable Android 36 emulator QA build SHA-256 4deb2bab7d6e325d0c20060ce8118bb0dbda292ea29b4e99df78e7c6a82a546d passed BrowserSmokeInstrumentation. Its test APK SHA-256 was e1207051b001b9c56e097f5eaf35b96d190773e4b3d9bf4a9559ef19ba1f3940. Synthetic tests covered disabled/private denial, 1/2/4-tab roots, alphabetical author index, direct standalone book, series order, archived-item hiding, 95-book grouped browsing without loss, text search, and media-session selection and voice search. Instrumentation result code -1 means pass. Synthetic QA data was cleared.
+- Exact signed Preview.45 APK installed on the disposable emulator, then exact signed Preview.46 upgraded it in place. Package manager reported versionCode 46 and 0.1.0-preview.46. The signed app launched and its exported media browser intent resolved. No Arioso fatal crash was observed in the scoped emulator crash buffer.
+- Release runtime dependencies and their packaged license notices were reviewed. OSV Maven version queries for AndroidX Media/Core, their resolved support libraries, Kotlin stdlib, JetBrains annotations and Guava ListenableFuture returned zero entries on 2026-11-08; this is a dated advisory snapshot, not proof of absence. See Work/qa/auto46/dependency-audit.txt.
+
+Limits
+- The emulator media commands used synthetic metadata and checked selection, voice search and reported playback actions. It did not play audio through an Android Auto head unit. A parked-car or Desktop Head Unit test on the exact signed APK remains necessary for car UI, voice recognition, steering-wheel buttons, route changes and interruptions.
+- The Pixel app was not updated during preparation. Its earlier Downloads-only picker report, personal audiobook playback, live TalkBack/Switch Access, Bluetooth, long playback, physical battery/performance and Android Auto behavior remain unqualified for this candidate.
+- The previously prepared local Play bundle is based on Preview.45. No Preview.46 Play-generated APK, Play Console, production or sale qualification.
+- GitHub Latest and public-asset verification must be recorded separately after publication.

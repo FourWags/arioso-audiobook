@@ -1,0 +1,30 @@
+name: Publish Arioso preview 46
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .release-input/preview46/**
+      - .github/workflows/publish-preview46.yml
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.repository == 'FourWags/arioso-audiobook'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild source archive from frozen manifest
+        run: python3 .release-input/preview46/make-source-zip.py
+      - name: Reassemble the verified signed APK
+        run: cat .release-input/preview46/arioso-preview.apk.part* > .release-input/preview46/arioso-preview.apk
+      - name: Verify frozen release inputs
+        working-directory: .release-input/preview46
+        run: sha256sum -c SHA256SUMS
+      - name: Publish signed Preview as Latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .release-input/preview46/publish-release.py
